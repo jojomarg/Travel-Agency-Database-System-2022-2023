@@ -1,0 +1,181 @@
+USE travel_agency;
+
+
+DROP TABLE log;
+CREATE TABLE log(
+Operation VARCHAR(20),
+UpdatedOn DATETIME,
+UpdatedBy VARCHAR(20));
+
+
+DROP TRIGGER IF EXISTS loginsert;
+DELIMITER $
+CREATE TRIGGER loginsert
+AFTER INSERT ON trip
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+
+DROP TRIGGER IF EXISTS resloginsert;
+DELIMITER $
+CREATE TRIGGER resloginsert
+AFTER INSERT ON reservation
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS eventloginsert;
+DELIMITER $
+CREATE TRIGGER eventloginsert
+AFTER INSERT ON event
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS travloginsert;
+DELIMITER $
+CREATE TRIGGER travloginsert
+AFTER INSERT ON travel_to
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+
+
+DROP TRIGGER IF EXISTS logdelete;
+DELIMITER $
+CREATE TRIGGER logdelete
+AFTER DELETE ON trip
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS reslogdelete;
+DELIMITER $
+CREATE TRIGGER reslogdelete
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS eventlogdelete;
+DELIMITER $
+CREATE TRIGGER eventlogdelete
+AFTER DELETE ON event
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS travlogdelete;
+DELIMITER $
+CREATE TRIGGER travlogdelete
+AFTER DELETE ON travel_to
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+
+DROP TRIGGER IF EXISTS logupdate;
+DELIMITER $
+CREATE TRIGGER logupdate
+AFTER DELETE ON trip
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+
+DROP TRIGGER IF EXISTS reslogupdate;
+DELIMITER $
+CREATE TRIGGER reslogupdate
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS eventlogupdate;
+DELIMITER $
+CREATE TRIGGER eventlogupdate
+AFTER DELETE ON event
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+
+DROP TRIGGER IF EXISTS travlogupdate;
+DELIMITER $
+CREATE TRIGGER travlogupdate
+AFTER DELETE ON travel_to
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.
+Drop trigger if exists salaryins
+DELIMITER $
+CREATE TRIGGER salaryins
+BEFORE UPDATE ON worker
+FOR EACH ROW
+BEGIN
+IF NEW.wrk_salary<OLD.wrk_salary THEN SET NEW.wrk_salary=OLD.wrk_salary;
+END IF;
+END$
+

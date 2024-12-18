@@ -1,0 +1,1270 @@
+/* Project 2022-2023 */
+
+DROP DATABASE IF EXISTS travel_agency;						/* Ελέγχω αν υπάρχει το database μου */
+CREATE DATABASE travel_agency;							/* Δημιουργώ το database μου */
+USE travel_agency;									/* Θέτω το database μου ως travel_agency */
+
+CREATE TABLE branch(
+br_code INT(11) NOT NULL AUTO_INCREMENT,						/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή και να δίνεται αυτόματα με αυξηση της τιμής καθε φορά */
+br_street VARCHAR(30) DEFAULT 'unknown' NOT NULL,		    		/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+br_num INT(4),
+br_city VARCHAR(30) DEFAULT 'unknown' NOT NULL,			    		/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+PRIMARY KEY(br_code)
+);
+
+CREATE TABLE phones(
+ ph_br_code INT(11) NOT NULL AUTO_INCREMENT,					/* κλειδί της branch οντότητας */
+ ph_number CHAR(10) NOT NULL,
+ PRIMARY KEY(ph_br_code, ph_number),
+ FOREIGN KEY(ph_br_code) REFERENCES branch(br_code)				/* συνδέονται με το κλειδί br_code */
+ ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE worker(
+wrk_AT CHAR(10) NOT NULL,
+wrk_name VARCHAR(20) DEFAULT 'unknown',						/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+wrk_lname VARCHAR(20) DEFAULT 'unknown',						/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+wrk_salary FLOAT(7,2) NOT NULL,
+wrk_br_code INT(11) NOT NULL,								/* κλειδί branch οντότητας */
+PRIMARY KEY(wrk_AT),
+FOREIGN KEY(wrk_br_code) REFERENCES branch(br_code)				/* αφού το βελάκι φεύγει από την οντότητα worker, συγκεκριμένα το γνώρισμα wrk_br_code και πηγαίνει στην οντότητα branch συγκεκριένα στο γνώρισμα και κλειδί br_code */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE guide(
+gui_AT CHAR(10) NOT NULL,
+gui_cv TEXT,
+PRIMARY KEY(gui_AT),
+FOREIGN KEY(gui_AT) REFERENCES worker(wrk_AT)					/* αφού το βελάκι φεύγει από την οντότητα guide, συγκεκριμένα το γνώρισμα gui_AT και πηγαίνει στην οντότητα worker συγκεκριένα στο γνώρισμα και κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE languages(
+lng_gui_AT CHAR(10) NOT NULL,								/* κλειδί guide οντότητας */
+lng_language VARCHAR(30) DEFAULT 'unknown' NOT NULL,    			/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+PRIMARY KEY(lng_gui_AT, lng_language),
+FOREIGN KEY(lng_gui_AT) REFERENCES guide(gui_AT)				/* συνδέονται με το κλειδί gui_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE driver(
+drv_AT CHAR(10) NOT NULL,
+drv_license ENUM('A', 'B', 'C', 'D') NOT NULL,
+drv_route ENUM('LOCAL', 'ABROAD') NOT NULL,
+drv_experience TINYINT(4), 
+PRIMARY KEY(drv_AT),
+FOREIGN KEY(drv_AT) REFERENCES worker(wrk_AT)					/* αφού το βελάκι φεύγει από την οντότητα driver, συγκεκριμένα το γνώρισμα drv_AT και πηγαίνει στην οντότητα worker συγκεκριένα στο γνώρισμα και κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE admin(
+adm_AT CHAR(10) NOT NULL,
+adm_type ENUM('LOGISTICS', 'ADMINISTRATIVE', 'ACCOUNTING') NOT NULL,	/* μπορεί να πάρει τιμές μεταξύ LOGISTICS, ADMINISTRATIVE και ACCOUNTING */
+adm_diploma VARCHAR(200) DEFAULT 'unknown' NOT NULL,				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+PRIMARY KEY(adm_AT),
+FOREIGN KEY(adm_AT) REFERENCES worker(wrk_AT)					/* αφού το βελάκι φεύγει από την οντότητα admin, συγκεκριμένα το γνώρισμα adm_AT και πηγαίνει στην οντότητα worker συγκεκριένα στο γνώρισμα και κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE manages(
+mng_adm_AT CHAR(10) NOT NULL,								/* κλειδί admin οντότητας */
+mng_br_code INT(11) NOT NULL,								/* κλειδί branch οντότητας */
+PRIMARY KEY(mng_adm_AT, mng_br_code),
+FOREIGN KEY(mng_adm_AT) REFERENCES admin(adm_AT)				/* συνδέονται με το κλειδί adm_AT */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(mng_br_code) REFERENCES branch(br_code)				/* συνδέονται με το κλειδί br_code */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE trip(
+tr_id INT(11) NOT NULL AUTO_INCREMENT,						/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή και να δίνεται αυτόματα με αυξηση της τιμής καθε φορά */
+tr_departure DATETIME,
+tr_return DATETIME,
+tr_maxseats TINYINT(4) NOT NULL,
+tr_cost FLOAT(7,2) NOT NULL,
+tr_br_code INT(11) NOT NULL,								/* κλειδί της branch οντότητας */
+tr_gui_AT CHAR(10) NOT NULL,								/* κλειδί guide οντότητας */
+tr_drv_AT CHAR(10) NOT NULL,								/* κλειδί driver οντότητας */
+PRIMARY KEY(tr_id),
+FOREIGN KEY(tr_br_code) REFERENCES branch(br_code)				/* αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_br_code και πηγαίνει στην οντότητα branch συγκεκριένα στο γνώρισμα και κλειδί br_code */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(tr_gui_AT) REFERENCES guide(gui_AT)					/* αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_gui_AT και πηγαίνει στην οντότητα guide συγκεκριένα στο γνώρισμα και κλειδί gui_AT */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(tr_drv_AT) REFERENCES driver(drv_AT)				/* αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_drv_AT και πηγαίνει στην οντότητα driver συγκεκριένα στο γνώρισμα και κλειδί tr_drv_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE event(
+ ev_tr_id INT(11) NOT NULL,								/* κλειδί trip οντότητας */
+ ev_start DATETIME, 
+ ev_end DATETIME,
+ ev_descr TEXT(6000),
+ PRIMARY KEY(ev_tr_id, ev_start),
+ FOREIGN KEY(ev_tr_id) REFERENCES trip(tr_id)					/* συνδέονται με το κλειδί tr_id */
+ ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE destination(
+dst_id INT(11) NOT NULL AUTO_INCREMENT,						/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή και να δίνεται αυτόματα με αυξηση της τιμής καθε φορά */
+dst_name VARCHAR(50) DEFAULT 'unknown' NOT NULL,		  		/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+dst_descr TEXT(6000) NOT NULL,
+dst_rtype ENUM('LOCAL', 'ABROAD') NOT NULL,					/* μπορεί να πάρει τιμές μεταξύ ADULT και MINOR */
+dst_language VARCHAR(30) DEFAULT 'unknown' NOT NULL,				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+dst_location INT(11),									/* είναι εξωτερικό κλειδί της ίδιας οντότητας */
+PRIMARY KEY(dst_id),
+FOREIGN KEY(dst_location) REFERENCES destination(dst_id)			/* συνδέονται με το κλειδί dst_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE reservation(
+res_tr_id INT(11) NOT NULL,								/* κλειδί trip οντότητας */
+res_seatnum TINYINT(4) NOT NULL,							/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή */
+res_name VARCHAR(20) DEFAULT 'unknown' NOT NULL, 				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+res_lname VARCHAR(20) DEFAULT 'unknown' NOT NULL, 				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+res_isadult ENUM('ADULT', 'MINOR') NOT NULL,					/* μπορεί να πάρει τιμές μεταξύ ADULT και MINOR */
+PRIMARY KEY(res_tr_id, res_seatnum),
+FOREIGN KEY(res_tr_id) REFERENCES trip(tr_id)					/* συνδέονται με το κλειδί tr_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE travel_to(
+to_tr_id INT(11) NOT NULL,								/* κλειδί trip οντότητας */
+to_dst_id  INT(11) NOT NULL,								/* κλειδί destination οντότητας */
+tp_arrival DATETIME,
+to_departure DATETIME,
+PRIMARY KEY(to_tr_id, to_dst_id),
+FOREIGN KEY(to_tr_id) REFERENCES trip(tr_id)					/* συνδέονται με το κλειδί tr_id */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(to_dst_id) REFERENCES destination(dst_id)				/* συνδέονται με το κλειδί dst_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE it(
+it_AT CHAR(10) NOT NULL,								/* κλειδί worker οντότητας */
+it_pwd CHAR(10) NOT NULL DEFAULT 'password',
+it_start_date DATE NOT NULL,
+it_end_date DATE,
+PRIMARY KEY (it_AT),
+FOREIGN KEY (it_AT) REFERENCES worker(wrk_AT)					/* συνδέονται με το κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE offers(
+offers_id INT(11) NOT NULL,
+start_date DATE NOT NULL,
+end_date DATE NOT NULL,
+cost_per_pers FLOAT(7,2) NOT NULL,
+offers_dst_id INT(11) NOT NULL,							/* κλειδί destination οντότητας */
+PRIMARY KEY(offers_id),
+FOREIGN KEY(offers_dst_id) REFERENCES destination(dst_id)			/* συνδέονται με το κλειδί dst_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE reservation_offers(
+reserv_id INT(11) NOT NULL AUTO_INCREMENT,
+reserv_lname VARCHAR(20) DEFAULT 'unknown' NOT NULL,
+reserv_name VARCHAR(20) DEFAULT 'unknown' NOT NULL,
+reserv_offers_id INT(11) NOT NULL,							/* κλειδί offers οντότητας */
+adv_payment INT(11) NOT NULL,
+PRIMARY KEY(reserv_id),
+FOREIGN KEY(reserv_offers_id) REFERENCES offers(offers_id)			/* συνδέονται με το κλειδί offers_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+INSERT INTO branch VALUES
+(NULL, 'Cherry Blossom Steet', 7, 'Tokyo'),
+(NULL, 'Woodbarow Lane', 88, 'Mumbai'),
+(NULL, 'Rabbithole Lane', 6, 'Prague'),
+(NULL, 'Smith Passage', 44, 'Odessa'),
+(NULL, 'Bacon Lane', 23, 'Moscow'),
+(NULL, 'Craven St', 3, 'Rome'),
+(NULL, 'Woodstock Road', 7, 'London'),
+(NULL, 'Hillfield Ave', 9, 'Paris'),
+(NULL, 'Oaklands', 5,'Galway'),
+(NULL, 'Old Abbey St', 6, 'Madrid'),
+(NULL, 'Willsbrook Rd', 11, 'Dublin'),
+(NULL, 'Greenhills Rd', 14, 'Berlin');
+
+INSERT INTO phones VALUES
+(1, '2101234326'),
+(1, '2104327659'),
+(1, '2101243575'),
+(2, '2103563246'),
+(2, '2102575332'),
+(2, '2101467966'),
+(3, '2106432558'),
+(3, '2104576544'),
+(3, '2103245678'),
+(4, '2102335677'),
+(4, '2107886443'),
+(5, '2103456664'),
+(5, '2103335677'),
+(5, '2102479042'),
+(6, '2105690064'),
+(6, '0205673984'),
+(6, '0204561378'),
+(7, '0203157896'),
+(7, '0201345260'),
+(7, '0203012004'),
+(8, '0910998645'),
+(8, '0912406589'),
+(8, '3535420304'),
+(9, '3533256010'),
+(10, '3533352015'),
+(10, '3530331456'),
+(11, '0113045620'),
+(12, '0113012503'),
+(12, '0113022158'),
+(12, '3536648201');
+
+INSERT INTO worker VALUES
+('8678564471', 'Kiri', 'Zhang', 40000.00, 1),
+('2437372527', 'Jiro', 'Miyazaki', 40000.00, 1),
+('2628926689', 'Hayao', 'Fukushishi', 40000.00, 1),
+('1020145368', 'Olivia', 'Carpender', 30000.00, 1),
+('2447689992', 'Kiki', 'Batis', 25000.00, 1),
+('1235446780', 'Va', 'Khan', 40000.00, 2),
+('6249462836', 'Naya', 'Amar', 40000.00, 2),
+('6485731250', 'Karen', 'Galin', 30000.00, 2),
+('1110205348', 'Phil', 'Collins', 25000.00, 2),
+('9800865332', 'Eleanor', 'Meyer', 40000.00, 3),
+('5678667655', 'Michael', 'Barner', 30000.00, 3),
+('1353579432', 'David', 'Downs', 25000.00, 3),
+('4688696944', 'Chihiro', 'Horikoshi', 40000.00, 4),
+('4432345688', 'Violet', 'Shea', 30000.00, 4),
+('4567321115', 'Evelyn', 'Horn', 25000.00, 4),
+('2652373563', 'Arnold', 'MacLaren', 40000.00, 5),
+('2863743683', 'Igor', 'Ivanov', 40000.00, 5),
+('4124102563', 'Rory', 'Swans', 30000.00, 5),
+('2548961350', 'Walter', 'Turner', 25000.00, 5),
+('8900076542', 'Mary', 'Fowler', 40000.00, 6),
+('2015201536', 'William', 'Coalman', 30000.00, 6),
+('3245601852', 'Mathew', 'Saleson', 25000.00, 6),
+('6780230689', 'Emma', 'Luna', 40000.00, 7),
+('2739263962', 'Isabelle', 'Stans', 40000.00, 7),
+('5784961325', 'Jacob', 'Turner', 30000.00, 7),
+('6648912573', 'Phoebe', 'Bridge', 25000.00, 7),
+('0258963145', 'James', 'Smith', 40000.00, 8),
+('4412223346', 'Jiro', 'Rowe', 30000.00, 8),
+('5478548947', 'Sophia', 'Walters', 25000.00, 8),
+('1024567823', 'Colin', 'Farel', 40000.00, 9),
+('1223456445', 'Jimmy', 'Bowman', 30000.00, 9),
+('4415203654', 'Hugh', 'Grand', 25000.00, 9),
+('4561897358', 'Lilly', 'James', 40000.00, 10),
+('5788533223', 'Collin', 'Deleon', 30000.00, 10),
+('5478998667', 'Jennifer', 'Thomson', 25000.00, 10),
+('3648463299', 'Margo', 'Sasimi', 40000.00, 11),
+('2486751320', 'Margaret', 'Smith', 30000.00, 11),
+('6788765443', 'Ava', 'Andrade', 25000.00, 11),
+('2629103764', 'Robin', 'Maya', 40000.00, 12),
+('2792472900', 'Cataleya ', 'Blue', 40000.00, 12),
+('8906540064', 'Lily', 'Campbell', 30000.00, 12),
+('2211245775', 'James', 'Mooney', 25000.00, 12),
+('2829248395', 'Scylla', 'Mendoza', 35000.00, 1),
+('2829461982', 'Karen', 'Linlin', 35000.00, 1),
+('3738938472', 'Jude', 'Liu', 35000.00, 2),
+('2938648329', 'Erin', 'Jones', 35000.00, 2),
+('2824357282', 'Jollene', 'Huffman', 35000.00, 3),
+('2790909885', 'Patty', 'Anderson', 35000.00, 4),
+('2728190021', 'Jerome', 'Khan', 35000.00, 5),
+('1246790543', 'Kevin', 'Han', 35000.00, 6),
+('2345674200', 'Neo', 'Bryant', 35000.00, 7),
+('1010382408', 'Linda', 'Jenkins', 35000.00, 7),
+('2729262729', 'Kiki', 'Torens', 35000.00, 7),
+('2234521679', 'Rosa', 'Zhannk', 35000.00, 8),
+('2335236887', 'Amir', 'Berg', 35000.00, 9),
+('0928048973', 'Sofia', 'Everett', 35000.00, 10),
+('2629282682', 'Kit', 'Everson', 35000.00, 10),
+('2829019811', 'Nina', 'Linc', 35000.00, 11),
+('2467895322', 'Clementine', 'Sampson', 35000.00, 12);
+
+INSERT INTO guide VALUES
+('1020145368', 'BIOGRAPHY'),
+('6485731250', 'BIOGRAPHY'),
+('5678667655', 'BIOGRAPHY'),
+('4432345688', 'BIOGRAPHY'),
+('4124102563', 'BIOGRAPHY'),
+('2015201536', 'BIOGRAPHY'),
+('5784961325', 'BIOGRAPHY'),
+('4412223346', 'BIOGRAPHY'),
+('1223456445', 'BIOGRAPHY'),
+('5788533223', 'BIOGRAPHY'),
+('2486751320', 'BIOGRAPHY'),
+('8906540064', 'BIOGRAPHY');
+
+INSERT INTO languages VALUES
+('1020145368', 'English, Japanese, Mandarin'),
+('6485731250', 'English, Hindi, Urdu'),
+('5678667655', 'English, Czech, German'),
+('4432345688', 'English, Polish, Ukrainian'),
+('4124102563', 'English, Russian, Ukrainian'),
+('2015201536', 'English, Italian, Sicilian'),
+('5784961325', 'English, Finnish, Icelandic'),
+('4412223346', 'English, French'),
+('1223456445', 'English, Irish, French'),
+('5788533223', 'English, Spanish, Italian'),
+('2486751320', 'English, Irish, French'),
+('8906540064', 'English, German, French');
+
+INSERT INTO driver VALUES
+('2447689992', 'B', 'ABROAD', 24),
+('1110205348', 'D', 'ABROAD', 48),
+('1353579432', 'A', 'LOCAL', 6),
+('4567321115', 'D', 'LOCAL', 56),
+('2548961350', 'D', 'LOCAL', 67),
+('3245601852', 'B', 'ABROAD', 12),
+('6648912573', 'C', 'ABROAD', 24),
+('5478548947', 'B', 'LOCAL', 15),
+('4415203654', 'A', 'LOCAL', 5),
+('5478998667', 'B', 'LOCAL', 36),
+('6788765443', 'A', 'LOCAL', 9),
+('2211245775', 'C', 'ABROAD', 28);
+
+INSERT INTO admin VALUES
+('8678564471', 'ADMINISTRATIVE', 'Travel Sales'),
+('2437372527', 'ACCOUNTING', 'Accounting'),
+('2628926689', 'LOGISTICS', 'Logistics'),
+('1235446780', 'ADMINISTRATIVE', 'Management'),
+('6249462836', 'ACCOUNTING', 'Accounting'),
+('9800865332', 'ADMINISTRATIVE', 'Tourism Consultant'),
+('4688696944', 'ADMINISTRATIVE', 'Tourism & Hospitality'),
+('2652373563', 'ADMINISTRATIVE', 'Tourism Consultant'),
+('2863743683', 'LOGISTICS', 'Global Operations & Logistics'),
+('8900076542', 'ADMINISTRATIVE', 'Global Operations & Logistics'),
+('6780230689', 'ADMINISTRATIVE', 'Tourism Consultant'),
+('2739263962', 'ACCOUNTING', 'Accounting'),
+('0258963145', 'ADMINISTRATIVE', 'Global Operations & Logistics'),
+('1024567823', 'ADMINISTRATIVE', 'Travel Sales'),
+('4561897358', 'ADMINISTRATIVE', 'Business Administrasion'),
+('3648463299', 'ADMINISTRATIVE', 'Tourism Management'),
+('2629103764', 'ADMINISTRATIVE', 'Business Administrasion'),
+('2792472900', 'LOGISTICS', 'Logistics');
+
+INSERT INTO manages VALUES
+('8678564471', 1),
+('1235446780', 2),
+('9800865332', 3),
+('4688696944', 4),
+('2652373563', 5),
+('8900076542', 6),
+('6780230689', 7),
+('0258963145', 8),
+('1024567823', 9),
+('4561897358', 10),
+('3648463299', 11),
+('2629103764', 12);
+
+INSERT INTO trip VALUES
+(NULL, '2022-01-01 06:00:00', '2022-02-01 18:00:00', 4, 10000.00, 1, '1020145368', '2447689992'),		/* ταξίδι στην Ιαπωνία */
+(NULL, '2024-02-01 06:00:00', '2024-02-29 18:00:00', 6, 05000.00, 1, '1020145368', '2447689992'),		/* ταξίδι στην Κίνα */
+(NULL, '2023-07-01 06:00:00', '2023-10-01 18:00:00', 2, 10000.00, 2, '6485731250', '1110205348'),		/* ταξίδι στην Ινδία */
+(NULL, '2023-09-01 06:00:00', '2023-10-01 18:00:00', 2, 03500.00, 2, '6485731250', '1110205348'),		/* ταξίδι στο Πακιστάν */
+(NULL, '2024-05-01 06:00:00', '2024-05-30 18:00:00', 2, 05500.00, 3, '5678667655', '1353579432'),		/* ταξίδι στην Πράγα */
+(NULL, '2023-10-01 06:00:00', '2023-10-30 18:00:00', 5, 03500.00, 4, '4432345688', '4567321115'),		/* ταξίδι στην Οδησσό */
+(NULL, '2023-06-01 06:00:00', '2023-06-20 18:00:00', 3, 01500.00, 4, '4432345688', '4567321115'),		/* ταξίδι στην  Πολωνία*/
+(NULL, '2022-10-01 06:00:00', '2022-10-20 18:00:00', 2, 02500.00, 5, '4124102563', '2548961350'),		/* ταξίδι στην Μόσχα */
+(NULL, '2023-11-01 06:00:00', '2023-12-01 18:00:00', 2, 04500.00, 5, '4124102563', '2548961350'),		/* ταξίδι στην Μόσχα */
+(NULL, '2023-02-01 06:00:00', '2023-03-01 18:00:00', 2, 04500.00, 6, '2015201536', '3245601852'),		/* ταξίδι στην Ρώμη */
+(NULL, '2022-12-01 06:00:00', '2023-02-20 18:00:00', 5, 15000.00, 6, '2015201536', '3245601852'),		/* ταξίδι στην Σικελία */
+(NULL, '2023-12-01 06:00:00', '2024-01-01 18:00:00', 4, 02500.00, 7, '5784961325', '6648912573'),		/* ταξίδι στο Λονδίνο */
+(NULL, '2022-11-01 06:00:00', '2022-12-01 18:00:00', 3, 02500.00, 7, '5784961325', '6648912573'),		/* ταξίδι στην Ισλανδία */
+(NULL, '2023-08-01 06:00:00', '2023-11-01 18:00:00', 2, 10000.00, 8, '4412223346', '5478548947'),		/* ταξίδι στο Παρίσι */
+(NULL, '2023-01-01 06:00:00', '2023-01-30 18:00:00', 2, 01000.00, 9, '1223456445', '4415203654'),		/* ταξίδι στο Galway */
+(NULL, '2025-02-01 06:00:00', '2025-03-01 18:00:00', 6, 01000.00, 10, '5788533223', '5478998667'),		/* ταξίδι στην Μαδρίτη */
+(NULL, '2023-05-01 06:00:00', '2023-06-01 18:00:00', 3, 01000.00, 10, '5788533223', '5478998667'),		/* ταξίδι στην Μαδρίτη */
+(NULL, '2023-03-01 06:00:00', '2023-04-01 18:00:00', 5, 01000.00, 11, '2486751320', '6788765443'),		/* ταξίδι στο Δουβλίνο */
+(NULL, '2025-12-01 06:00:00', '2025-01-01 18:00:00', 3, 02000.00, 12, '8906540064', '2211245775'),		/* ταξίδι στην Ελβετία */
+(NULL, '2024-01-01 06:00:00', '2024-02-01 18:00:00', 4, 03500.00, 12, '5784961325', '2211245775');		/* ταξίδι στην Φινλανδία */
+
+INSERT INTO event VALUES
+( 1, '2022-01-02 09:00:00', '2022-01-30 13:30:00', 'Temple Visits'),		/* ταξίδι στην Ιαπωνία */
+( 1, '2022-01-02 16:00:00', '2022-01-30 18:00:00', 'Siteseeing'),
+( 1, '2022-01-02 19:00:00', '2022-01-30 20:00:00', 'City Walking Tour'),
+( 2, '2024-02-02 09:00:00', '2024-02-28 13:30:00', 'Museum Visits'),		/* ταξίδι στην Κίνα */
+( 2, '2024-02-02 16:00:00', '2024-02-28 18:00:00', 'Bike Riding'),
+( 3, '2023-07-02 09:00:00', '2023-09-30 13:30:00', 'Temple Visits'),
+( 3, '2023-07-02 18:00:00', '2023-09-30 21:30:00', 'Free Time'),
+( 4, '2023-09-02 09:00:00', '2023-09-30 13:30:00', 'Museum Visits'),
+( 4, '2023-09-02 18:00:00', '2023-09-30 21:30:00', 'Shopping'),
+( 5, '2024-05-02 09:00:00', '2024-05-29 13:30:00', 'Siteseeing'),
+( 5, '2024-05-02 18:00:00', '2024-05-29 21:00:00', 'Canal Cruise'),
+( 6, '2023-10-02 09:00:00', '2023-10-29 13:30:00', 'Museum Visits'),
+( 7, '2023-06-02 09:00:00', '2023-06-19 13:30:00', 'City Walking Tour'),
+( 8, '2022-10-02 09:00:00', '2022-10-19 13:30:00', 'Museum Visits'),
+( 8, '2022-10-06 18:00:00', '2022-10-06 21:30:00', 'Opera'),
+( 9, '2023-11-02 09:00:00', '2023-11-30 13:30:00', 'Siteseeing'),
+( 9, '2023-11-06 18:00:00', '2023-11-06 21:30:00', 'Banyas'),
+( 10, '2023-02-02 09:00:00', '2023-02-28 13:30:00', 'Cathedral Visits'),
+( 10, '2023-02-02 18:00:00', '2023-02-28 21:30:00', 'Wine Tasting'),
+( 11, '2022-12-02 09:00:00', '2023-02-19 13:30:00', 'Museum Visits'),
+( 11, '2022-12-10 18:00:00', '2022-12-10 20:30:00', 'Wine Tasting'),
+( 12, '2023-12-02 06:00:00', '2023-12-31 13:30:00', 'Museum Visits'),
+( 13, '2022-11-02 09:00:00', '2022-11-30 13:30:00', 'Hiking'),
+( 13, '2022-11-02 16:00:00', '2022-11-30 18:30:00', 'Siteseeing'),
+( 13, '2022-11-02 19:00:00', '2022-11-30 21:30:00', 'Free Time'),
+( 14, '2023-08-02 09:00:00', '2023-10-30 13:30:00', 'Museum Visits'),
+( 14, '2023-08-02 16:00:00', '2023-10-30 18:30:00', 'Wine Tasting'),
+( 15, '2023-01-02 09:00:00', '2023-01-29 13:30:00', 'Siteseeing'),
+( 15, '2023-01-02 19:00:00', '2023-01-29 23:30:00', 'Pub Crawling'),
+( 16, '2025-02-02 09:00:00', '2025-02-28 13:30:00', 'Museum Visits'),
+( 16, '2025-02-02 18:00:00', '2025-02-28 20:30:00', 'Surfing'),
+( 17, '2023-05-02 09:00:00', '2023-05-30 13:30:00', 'Museum Visits'),
+( 17, '2023-05-02 15:00:00', '2023-05-30 18:30:00', 'Wine Tasting'),
+( 17, '2023-05-02 19:00:00', '2023-05-30 21:30:00', 'Opera'),
+( 18, '2023-03-02 09:00:00', '2023-03-30 13:30:00', 'City Walking Tour'),
+( 18, '2023-03-02 19:00:00', '2023-03-30 23:30:00', 'Pub Crawling'),
+( 19, '2025-12-02 09:00:00', '2025-12-30 13:30:00', 'Museum Visits'),
+( 19, '2025-12-02 16:00:00', '2025-12-30 18:30:00', 'Bike Riding'),
+( 20, '2024-01-02 09:00:00', '2024-01-30 16:00:00', 'Winter Sports'),
+( 20, '2024-01-02 17:00:00', '2024-01-30 19:00:00', 'Reindeer Petting');
+
+INSERT INTO destination VALUES
+( 1, 'Japan', 'A glimpse of the old ways, Japanese Temples', 'LOCAL', 'Japanese', 1),
+( 2, 'China', 'The place with the longest history', 'ABROAD', 'Mandarin', 2),
+( 3, 'India', 'A spiritual journey of Idias many beliefs', 'LOCAL', 'Hindi', 3),
+( 4, 'Pakistan', 'A journey through the wonders of Pakistan', 'ABROAD', 'Hindi', 4),
+( 5, 'Czech Republic', 'The most cultural place in Europe', 'LOCAL', 'Czech', 5),
+( 6, 'Ukraine', 'A trully cultural city', 'LOCAL', 'Ukrainian', 6),
+( 7, 'Russia', 'Deep relaxation with Banyas', 'LOCAL', 'Russian', 7),
+( 8, 'Italy', 'Summer destinations of the most beautiful waters', 'LOCAL', 'Italian', 8),
+( 9, 'Sicily', 'A quiet and nice summer destinations', 'ABROAD', 'Sicilian', 9),
+( 10, 'England', 'Capital of the UK', 'LOCAL', 'English', 10),
+( 11, 'Iceland', 'The place with the most beautiful landscapes', 'ABROAD', 'Icelandic', 11),
+( 12, 'France', 'A culinary tour of France', 'LOCAL', 'French', 12),
+( 13, 'Ireland', 'The wonders of Ireland', 'LOCAL', 'Irish', 13),
+( 14, 'Spain', 'Summer surfing destination', 'LOCAL', 'Spanish', 14),
+( 15, 'Switzerland', 'Winter Destination for cheese lovers', 'ABROAD', 'German', 15),
+( 16, 'Finland', 'Snow Resort on the Mountains', 'ABROAD', 'Finnish', 16),
+( 17, 'Germany', 'The heart of Europe', 'LOCAL', 'German', 17),
+( 18, 'Poland', 'The number one tourist destination for young adults', 'ABROAD', 'Polish', 18),
+( 19, 'Austria', 'The best chocolate in the world', 'ABROAD', 'German', 19),
+( 20, 'Scotland', 'The most mesmerizing countryside', 'ABROAD', 'Scotish', 20);
+
+INSERT INTO reservation VALUES
+( 1, 1, 'Phil', 'Jacobs', 'ADULT'),
+( 1, 2, 'Robert', 'Stulls', 'ADULT'),
+( 1, 3, 'Barkley', 'Turner', 'MINOR'),
+( 2, 3, 'Olivia', 'Bridges', 'ADULT'),
+( 2, 4, 'Will', 'Dower', 'ADULT'),
+( 3, 1, 'Kate', 'Middletin', 'ADULT'),
+( 3, 2, 'Elijah', 'Wright', 'ADULT'),
+( 4, 1, 'Stuart', 'Little', 'ADULT'),
+( 4, 2, 'Jack', 'Marrowbone', 'MINOR'),
+( 5, 1, 'Mike', 'Stuarts', 'ADULT'),
+( 5, 2, 'Rachel', 'Adams', 'ADULT'),
+( 6, 2, 'Jess', 'Walters', 'ADULT'),
+( 6, 4, 'Ron', 'Waters', 'ADULT'),
+( 6, 5, 'Harry', 'Horseman', 'ADULT'),
+( 7, 1, 'Philomina', 'Cunk', 'ADULT'),
+( 7, 3, 'Kai', 'Zhong', 'MINOR'),
+( 8, 1, 'Joe', 'Bowman', 'ADULT'), 
+( 8, 2, 'Arya', 'Stark', 'MINOR'),
+( 9, 1, 'Milo', 'Velman', 'ADULT'),
+( 9, 2, 'Isma', 'Doevil', 'MINOR'),
+( 10, 1, 'Cronk', 'Malice', 'ADULT'), 
+( 10, 2, 'Mike', 'Walter', 'MINOR'),
+( 11, 3, 'Robin', 'Siena', 'ADULT'),
+( 11, 5, 'George', 'Margos', 'ADULT'),
+( 12, 2, 'Orlando', 'Bloom', 'ADULT'), 
+( 12, 3, 'Octavia', 'Clarke', 'ADULT'), 
+( 12, 4, 'Mary', 'Jane', 'ADULT'), 
+( 13, 1, 'Delilah', 'Horsy', 'ADULT'),
+( 13, 2, 'Kiki', 'Down', 'ADULT'),
+( 13, 3, 'Thalia', 'Webster', 'MINOR'),
+( 14, 1, 'Gaige', 'Alvarez', 'ADULT'), 
+( 14, 2, 'Cataleya', 'Schmidt', 'MINOR'),
+( 15, 2, 'Deanna', 'Oneal', 'ADULT'), 
+( 16, 6, 'Myla', 'Oconnonel', 'ADULT'), 
+( 17, 2, 'Furiossa', 'Ho', 'ADULT'), 
+( 17, 3, 'Gilberto', 'Po', 'MINOR'),
+( 18, 1, 'Denise', 'Ramshorn', 'ADULT'), 
+( 18, 3, 'Aliyah', 'Claymore', 'ADULT'), 
+( 18, 5, 'Mufasa', 'Bellweather', 'MINOR'),
+( 19, 2, 'Mila', 'Dune', 'ADULT'), 
+( 20, 3, 'Elsa', 'Wiggins', 'ADULT'), 
+( 20, 4, 'Mushu', 'Tanthalos', 'MINOR');
+
+INSERT INTO travel_to VALUES
+(1, 1, '2022-01-01 06:00:00', '2022-02-01 18:00:00'),
+(2, 2, '2024-02-01 06:00:00', '2024-02-29 18:00:00'),
+(3, 3, '2023-07-01 06:00:00', '2023-09-01 18:00:00'),
+(3, 4, '2023-09-02 06:00:00', '2023-10-01 18:00:00'),
+(4, 3, '2023-09-01 06:00:00', '2023-10-01 18:00:00'),
+(5, 5, '2024-05-01 06:00:00', '2024-05-30 18:00:00'),
+(6, 6, '2023-10-01 06:00:00', '2023-10-30 18:00:00'),
+(7, 18, '2023-06-01 06:00:00', '2023-06-20 18:00:00'),
+(8, 7, '2022-10-01 06:00:00', '2022-10-20 18:00:00'),
+(9, 7, '2023-11-01 06:00:00', '2023-12-01 18:00:00'),
+(10, 8, '2023-02-01 06:00:00', '2023-02-20 18:00:00'),
+(10, 9, '2023-02-21 06:00:00', '2023-03-01 18:00:00'),
+(11, 9, '2022-12-01 06:00:00', '2023-01-01 18:00:00'),
+(11, 8, '2023-01-02 06:00:00', '2023-01-12 18:00:00'),
+(11, 14, '2023-01-12 06:00:00', '2023-02-20 18:00:00'),
+(12, 10, '2023-12-01 06:00:00', '2024-01-01 18:00:00'),
+(13, 11, '2022-11-01 06:00:00', '2022-12-01 18:00:00'),
+(14, 12, '2023-08-01 06:00:00', '2023-11-01 18:00:00'),
+(15, 13, '2023-01-01 06:00:00', '2023-01-15 18:00:00'),
+(15, 20, '2023-01-15 06:00:00', '2023-01-30 18:00:00'),
+(16, 14, '2025-02-01 06:00:00', '2025-03-01 18:00:00'),
+(17, 14, '2023-05-01 06:00:00', '2023-06-01 18:00:00'),
+(18, 13, '2023-03-01 06:00:00', '2023-03-15 18:00:00'),
+(18, 20, '2023-03-15 06:00:00', '2023-04-01 18:00:00'),
+(19, 15, '2025-12-01 06:00:00', '2025-12-15 18:00:00'),
+(19, 19, '2025-12-15 06:00:00', '2025-01-01 18:00:00'),
+(20, 16, '2024-01-01 06:00:00', '2024-02-01 18:00:00');
+
+INSERT INTO it VALUES
+('2829248395', 'pass', '2022-08-12', NULL),
+('2829461982', 'areal', '2021-04-25', NULL),
+('3738938472', 'somucha', '2020-01-12', NULL),
+('2938648329', 'welpidk', '2022-08-20', NULL),
+('2824357282', 'whoknows', '2021-04-14', NULL),
+('2790909885', 'serious', '2020-02-22', NULL),
+('2728190021', 'kikiki', '2023-01-01', NULL),
+('1246790543', 'Hananan', '2022-01-11', NULL),
+('2345674200', 'Neoman', '2019-02-22', NULL),
+('1010382408', 'Lindapass', '2021-12-02', NULL),
+('2729262729', 'llmn', '2021-10-31', NULL),
+('2234521679', 'bnn', '2020-01-22', NULL),
+('2335236887', 'kikids', '2020-08-01', NULL),
+('0928048973', 'copola', '2021-03-11', NULL),
+('2629282682', 'thirty', '2022-09-30', NULL),
+('2829019811', 'willow', '2020-07-12', NULL),
+('2467895322', 'clem', '2018-06-08', NULL);
+
+INSERT INTO offers VALUES
+('1475311584', '2023-12-01', '2024-01-01', 2500.00, 19),
+('1111111111', '2022-01-01', '2022-02-01', 5000.00, 1),
+('2111111112', '2024-02-01', '2024-02-29', 4000.00, 2);
+
+INSERT INTO reservation_offers VALUES
+(NULL, 'Sally', 'Kiri', '1475311584', 50),
+(NULL, 'Sally', 'Neteyam', '1475311584', 50),
+(NULL, 'Sally', 'Naitiri', '1475311584', 50),
+(NULL, 'Sally', 'Touk', '1475311584', 50),
+(NULL, 'Sally', 'Loak', '1475311584', 50),
+(NULL, 'Sally', 'Shara', '1475311584', 50),
+(NULL, 'Sally', 'Sara', '1475311584', 50),
+(NULL, 'Sally', 'Teagan', '1475311584', 50),
+(NULL, 'Sally', 'Rin', '1475311584', 50),
+(NULL, 'Sally', 'Spy', '1475311584', 50),
+(NULL, 'Oconnels', 'James', '1475311584', 60),
+(NULL, 'Oconnels', 'Kiki', '1475311584', 60),
+(NULL, 'Oconnels', 'Jammy', '1475311584', 60),
+(NULL, 'Oconnels', 'Jimmy', '1475311584', 60),
+(NULL, 'Oconnels', 'Genesis', '1475311584', 60),
+(NULL, 'Oconnels', 'Victoria', '1475311584', 60),
+(NULL, 'Oconnels', 'Vicky', '1475311584', 60),
+(NULL, 'Oconnels', 'Vi', '1475311584', 60),
+(NULL, 'Oconnels', 'Abby', '1475311584', 60),
+(NULL, 'Oconnels', 'Aden', '1475311584', 60),
+(NULL, 'Lilins', 'Titos', '1475311584', 70),
+(NULL, 'Lilins', 'Amir', '1475311584', 70),
+(NULL, 'Lilins', 'Amar', '1475311584', 70),
+(NULL, 'Lilins', 'Asmae', '1475311584', 70),
+(NULL, 'Lilins', 'Asmar', '1475311584', 70),
+(NULL, 'Lilins', 'Azur', '1475311584', 70),
+(NULL, 'Lilins', 'Abel', '1475311584', 70),
+(NULL, 'Lilins', 'Trevor', '1475311584', 70),
+(NULL, 'Lilins', 'Airk', '1475311584', 70),
+(NULL, 'Lilins', 'Tyrell', '1475311584', 70),
+(NULL, 'Lilink', 'Tom', '1475311584', 70),
+(NULL, 'Lilink', 'Tim', '1475311584', 70),
+(NULL, 'Lilink', 'Timmy', '1475311584', 70),
+(NULL, 'Lilink', 'Tik', '1475311584', 70),
+(NULL, 'Lilink', 'Titika', '1475311584', 70),
+(NULL, 'Lilink', 'Teagan', '1475311584', 70),
+(NULL, 'Lilink', 'Marissa', '1475311584', 70),
+(NULL, 'Lilink', 'Teressa', '1475311584', 70),
+(NULL, 'Lilink', 'Teressita', '1475311584', 70),
+(NULL, 'Lilink', 'Irvin', '1475311584', 70),
+(NULL, 'Lilint', 'Titika', '1475311584', 75),
+(NULL, 'Lilint', 'Irvin', '1475311584', 75),
+(NULL, 'Lilint', 'Erin', '1475311584', 75),
+(NULL, 'Lilint', 'Gwen', '1475311584', 75),
+(NULL, 'Lilint', 'Peter', '1475311584', 75),
+(NULL, 'Lilint', 'Tom', '1475311584', 75),
+(NULL, 'Lilint', 'Tomas', '1475311584', 75),
+(NULL, 'Lilint', 'Katia', '1475311584', 75),
+(NULL, 'Lilint', 'Tatiana', '1475311584', 75),
+(NULL, 'Lilint', 'Spencer', '1475311584', 75),
+(NULL, 'Remens', 'Owen', '1475311584', 80),
+(NULL, 'Remens', 'Karen', '1475311584', 80),
+(NULL, 'Remens', 'William', '1475311584', 80),
+(NULL, 'Remens', 'Maria', '1475311584', 80),
+(NULL, 'Remens', 'Octi', '1475311584', 80),
+(NULL, 'Remens', 'May', '1475311584', 80),
+(NULL, 'Remens', 'Levi', '1475311584', 80),
+(NULL, 'Remens', 'Genesis', '1475311584', 80),
+(NULL, 'Remens', 'Declan', '1475311584', 80),
+(NULL, 'Remens', 'Miriam', '1475311584', 80),
+(NULL, 'Lins', 'Clementine', '1475311584', 90),
+(NULL, 'Lins', 'Clem', '1475311584', 90),
+(NULL, 'Lins', 'Kt', '1475311584', 90),
+(NULL, 'Lins', 'Claire', '1475311584', 90),
+(NULL, 'Lins', 'Valentine', '1475311584', 90),
+(NULL, 'Lins', 'Erin', '1475311584', 90),
+(NULL, 'Lins', 'Sophie', '1475311584', 90),
+(NULL, 'Lins', 'Totoro', '1475311584', 90),
+(NULL, 'Lins', 'Howl', '1475311584', 90),
+(NULL, 'Lins', 'Emily', '1475311584', 90),
+(NULL, 'Tants', 'Ela', '1475311584', 100),
+(NULL, 'Tants', 'Elsa', '1475311584', 100),
+(NULL, 'Tants', 'Wilow', '1475311584', 100),
+(NULL, 'Tants', 'Peck', '1475311584', 100),
+(NULL, 'Tants', 'Tim', '1475311584', 100),
+(NULL, 'Tants', 'Erin', '1475311584', 100),
+(NULL, 'Tants', 'Emile', '1475311584', 100),
+(NULL, 'Tants', 'Yosef', '1475311584', 100),
+(NULL, 'Tants', 'Charlie', '1475311584', 100),
+(NULL, 'Tants', 'Tar', '1475311584', 100),
+(NULL, 'Mart', 'Maleah', '1475311584', 100),
+(NULL, 'Mart', 'Peter', '1475311584', 100),
+(NULL, 'Mart', 'Esmeralda', '1475311584', 100),
+(NULL, 'Mart', 'Erin', '1475311584', 100),
+(NULL, 'Mart', 'Jade', '1475311584', 100),
+(NULL, 'Mart', 'Ally', '1475311584', 100),
+(NULL, 'Mart', 'Elly', '1475311584', 100),
+(NULL, 'Mart', 'Matteo', '1475311584', 100),
+(NULL, 'Mart', 'Aliana', '1475311584', 100),
+(NULL, 'Mart', 'Yosef', '1475311584', 100),
+(NULL, 'Martmortigan', 'Kit', '1475311584', 110),
+(NULL, 'Martmortigan', 'Levi', '1475311584', 110),
+(NULL, 'Martmortigan', 'Roons', '1475311584', 110),
+(NULL, 'Martmortigan', 'Maria', '1475311584', 110),
+(NULL, 'Martmortigan', 'Rooney', '1475311584', 110),
+(NULL, 'Martmortigan', 'Kate', '1475311584', 110),
+(NULL, 'Martmortigan', 'Lin', '1475311584', 110),
+(NULL, 'Martmortigan', 'Lilou', '1475311584', 110),
+(NULL, 'Martmortigan', 'Lou', '1475311584', 110),
+(NULL, 'Martmortigan', 'Roon', '1475311584', 110),
+(NULL, 'Boorman', 'Tik', '1475311584', 120),
+(NULL, 'Boorman', 'Lilou', '1475311584', 120),
+(NULL, 'Boorman', 'Boo', '1475311584', 120),
+(NULL, 'Boorman', 'Elora', '1475311584', 120),
+(NULL, 'Boorman', 'Bilbo', '1475311584', 120),
+(NULL, 'Boorman', 'Aragon', '1475311584', 120),
+(NULL, 'Boorman', 'Moira', '1475311584', 120),
+(NULL, 'Boorman', 'Moiri', '1475311584', 120),
+(NULL, 'Boorman', 'Star', '1475311584', 120),
+(NULL, 'Boorman', 'Mia', '1475311584', 120),
+(NULL, 'Alagash', 'Kit', '1475311584', 130),
+(NULL, 'Alagash', 'Kat', '1475311584', 130),
+(NULL, 'Alagash', 'Kate', '1475311584', 130),
+(NULL, 'Alagash', 'Melo', '1475311584', 130),
+(NULL, 'Alagash', 'Elenor', '1475311584', 130),
+(NULL, 'Alagash', 'Pat', '1475311584', 130),
+(NULL, 'Alagash', 'Patty', '1475311584', 130),
+(NULL, 'Alagash', 'Mia', '1475311584', 130),
+(NULL, 'Alagash', 'Pay', '1475311584', 130),
+(NULL, 'Alagash', 'Kai', '1475311584', 130),
+(NULL, 'Bagings', 'Tik', '1475311584', 140),
+(NULL, 'Bagings', 'Amir', '1475311584', 140),
+(NULL, 'Bagings', 'Kataleya', '1475311584', 140),
+(NULL, 'Bagings', 'Scylla', '1475311584', 140),
+(NULL, 'Bagings', 'Kya', '1475311584', 140),
+(NULL, 'Bagings', 'Katara', '1475311584', 140),
+(NULL, 'Bagings', 'Yara', '1475311584', 140),
+(NULL, 'Bagings', 'Kate', '1475311584', 140),
+(NULL, 'Bagings', 'Katia', '1475311584', 140),
+(NULL, 'Bagings', 'Kiri', '1475311584', 140),
+(NULL, 'Bags', 'Toph', '1475311584', 150),
+(NULL, 'Bags', 'Tak', '1475311584', 150),
+(NULL, 'Bags', 'Aang', '1475311584', 150),
+(NULL, 'Bags', 'Erin', '1475311584', 150),
+(NULL, 'Bags', 'Ruby', '1475311584', 150),
+(NULL, 'Bags', 'Melo', '1475311584', 150),
+(NULL, 'Bags', 'Elliott', '1475311584', 150),
+(NULL, 'Bags', 'Donavan', '1475311584', 150),
+(NULL, 'Bags', 'Kira', '1475311584', 150),
+(NULL, 'Bags', 'Mylo', '1475311584', 150),
+(NULL, 'Skellin', 'Griffin', '1475311584', 160),
+(NULL, 'Skellin', 'Grin', '1475311584', 160),
+(NULL, 'Skellin', 'Airk', '1475311584', 160),
+(NULL, 'Skellin', 'Finn', '1475311584', 160),
+(NULL, 'Skellin', 'Octavia', '1475311584', 160),
+(NULL, 'Skellin', 'Clarke', '1475311584', 160),
+(NULL, 'Skellin', 'Clay', '1475311584', 160),
+(NULL, 'Skellin', 'Rin', '1475311584', 160),
+(NULL, 'Skellin', 'Rowan', '1475311584', 160),
+(NULL, 'Skellin', 'Carsen', '1475311584', 160),
+(NULL, 'Griffins', 'Bellamy', '1475311584', 170),
+(NULL, 'Griffins', 'Belle', '1475311584', 170),
+(NULL, 'Griffins', 'Manny', '1475311584', 170),
+(NULL, 'Griffins', 'Alex', '1475311584', 170),
+(NULL, 'Griffins', 'Alexandra', '1475311584', 170),
+(NULL, 'Griffins', 'Elle', '1475311584', 170),
+(NULL, 'Griffins', 'Elly', '1475311584', 170),
+(NULL, 'Griffins', 'Judah', '1475311584', 170),
+(NULL, 'Griffins', 'Sally', '1475311584', 170),
+(NULL, 'Griffins', 'Sia', '1475311584', 170),
+(NULL, 'Octiv', 'Kira', '1475311584', 180),
+(NULL, 'Octiv', 'Kali', '1475311584', 180),
+(NULL, 'Octiv', 'Shaun', '1475311584', 180),
+(NULL, 'Octiv', 'Eddie', '1475311584', 180),
+(NULL, 'Octiv', 'Ellen', '1475311584', 180),
+(NULL, 'Octiv', 'Hellen', '1475311584', 180),
+(NULL, 'Octiv', 'Jim', '1475311584', 180),
+(NULL, 'Octiv', 'Kit', '1475311584', 180),
+(NULL, 'Octiv', 'Alex', '1475311584', 180),
+(NULL, 'Octiv', 'Hlia', '1475311584', 180),
+(NULL, 'Mirren', 'Ellen', '1475311584', 190),
+(NULL, 'Mirren', 'Elly', '1475311584', 190),
+(NULL, 'Mirren', 'Hope', '1475311584', 190),
+(NULL, 'Mirren', 'Life', '1475311584', 190),
+(NULL, 'Mirren', 'Sam', '1475311584', 190),
+(NULL, 'Mirren', 'Kelly', '1475311584', 190),
+(NULL, 'Mirren', 'Raynera', '1475311584', 190),
+(NULL, 'Mirren', 'Jon', '1475311584', 190),
+(NULL, 'Mirren', 'Earon', '1475311584', 190),
+(NULL, 'Mirren', 'DAvid', '1475311584', 190),
+(NULL, 'Timollen', 'Timothy', '1475311584', 200),
+(NULL, 'Timollen', 'Tim', '1475311584', 200),
+(NULL, 'Timollen', 'Tihy', '1475311584', 200),
+(NULL, 'Timollen', 'Timmy', '1475311584', 200),
+(NULL, 'Timollen', 'Jim', '1475311584', 200),
+(NULL, 'Timollen', 'Kriss', '1475311584', 200),
+(NULL, 'Timollen', 'Lennon', '1475311584', 200),
+(NULL, 'Timollen', 'Ava', '1475311584', 200),
+(NULL, 'Timollen', 'Jillian', '1475311584', 200),
+(NULL, 'Timollen', 'Reid', '1475311584', 200),
+(NULL, 'Tikis', 'Tik', '1475311584', 50),
+(NULL, 'Tikis', 'Tiki', '1475311584', 50),
+(NULL, 'Tikis', 'Tiri', '1475311584', 50),
+(NULL, 'Tikis', 'Tolk', '1475311584', 50),
+(NULL, 'Tikis', 'Tate', '1475311584', 50),
+(NULL, 'Tikis', 'Kim', '1475311584', 50),
+(NULL, 'Tikis', 'Jan', '1475311584', 50),
+(NULL, 'Tikis', 'Alfredo', '1475311584', 50),
+(NULL, 'Tikis', 'Art', '1475311584', 50),
+(NULL, 'Tikis', 'Arthur', '1475311584', 50),
+(NULL, 'Takis', 'Tate', '1475311584', 60),
+(NULL, 'Takis', 'Amir', '1475311584', 60),
+(NULL, 'Takis', 'Toph', '1475311584', 60),
+(NULL, 'Takis', 'Tim', '1475311584', 60),
+(NULL, 'Takis', 'Hellen', '1475311584', 60),
+(NULL, 'Takis', 'Kit', '1475311584', 60),
+(NULL, 'Takis', 'Ioanna', '1475311584', 60),
+(NULL, 'Takis', 'Maria', '1475311584', 60),
+(NULL, 'Takis', 'Kim', '1475311584', 60),
+(NULL, 'Takis', 'Beatrice', '1475311584', 60),
+(NULL, 'Tanthaloss', 'Beatrice', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Bea', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Trice', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Triss', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Claire', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Boor', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Boo', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Erin', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Kit', '1475311584', 70),
+(NULL, 'Tanthaloss', 'Aang', '1475311584', 70),
+(NULL, 'Boormen', 'Aang', '1475311584', 80),
+(NULL, 'Boormen', 'Kare', '1475311584', 80),
+(NULL, 'Boormen', 'Katara', '1475311584', 80),
+(NULL, 'Boormen', 'Elora', '1475311584', 80),
+(NULL, 'Boormen', 'Alec', '1475311584', 80),
+(NULL, 'Boormen', 'Manny', '1475311584', 80),
+(NULL, 'Boormen', 'Billy', '1475311584', 80),
+(NULL, 'Boormen', 'Bill', '1475311584', 80),
+(NULL, 'Boormen', 'Ally', '1475311584', 80),
+(NULL, 'Boormen', 'Siraya', '1475311584', 80),
+(NULL, 'Denim', 'Siraya', '1475311584', 90),
+(NULL, 'Denim', 'Siri', '1475311584', 90),
+(NULL, 'Denim', 'Aya', '1475311584', 90),
+(NULL, 'Denim', 'Arya', '1475311584', 90),
+(NULL, 'Denim', 'Timmy', '1475311584', 90),
+(NULL, 'Denim', 'Lily', '1475311584', 90),
+(NULL, 'Denim', 'Siccy', '1475311584', 90),
+(NULL, 'Denim', 'Lillian', '1475311584', 90),
+(NULL, 'Denim', 'Kate', '1475311584', 90),
+(NULL, 'Denim', 'Sia', '1475311584', 90),
+(NULL, 'Demian', 'Luke', '1475311584', 100),
+(NULL, 'Demian', 'Luce', '1475311584', 100),
+(NULL, 'Demian', 'Lue', '1475311584', 100),
+(NULL, 'Demian', 'Lu', '1475311584', 100),
+(NULL, 'Demian', 'Te', '1475311584', 100),
+(NULL, 'Demian', 'Fle', '1475311584', 100),
+(NULL, 'Demian', 'Lia', '1475311584', 100),
+(NULL, 'Demian', 'Te', '1475311584', 100),
+(NULL, 'Demian', 'Le', '1475311584', 100),
+(NULL, 'Demian', 'Will', '1475311584', 100),
+(NULL, 'Shattes', 'Will', '1475311584', 110),
+(NULL, 'Shattes', 'Till', '1475311584', 110),
+(NULL, 'Shattes', 'Tim', '1475311584', 110),
+(NULL, 'Shattes', 'Jim', '1475311584', 110),
+(NULL, 'Shattes', 'Alex', '1475311584', 110),
+(NULL, 'Shattes', 'Alec', '1475311584', 110),
+(NULL, 'Shattes', 'Willow', '1475311584', 110),
+(NULL, 'Shattes', 'Kit', '1475311584', 110),
+(NULL, 'Shattes', 'Neo', '1475311584', 110),
+(NULL, 'Shattes', 'Trinity', '1475311584', 110),
+(NULL, 'Shatteres', 'Trinity', '1475311584', 120),
+(NULL, 'Shatteres', 'Trin', '1475311584', 120),
+(NULL, 'Shatteres', 'James', '1475311584', 120),
+(NULL, 'Shatteres', 'Amen', '1475311584', 120),
+(NULL, 'Shatteres', 'Tally', '1475311584', 120),
+(NULL, 'Shatteres', 'Amir', '1475311584', 120),
+(NULL, 'Shatteres', 'Timmy', '1475311584', 120),
+(NULL, 'Shatteres', 'Katerina', '1475311584', 120),
+(NULL, 'Shatteres', 'Natasha', '1475311584', 120),
+(NULL, 'Shatteres', 'Natassa', '1475311584', 120),
+(NULL, 'Mothers', 'Natassa', '1475311584', 130),
+(NULL, 'Mothers', 'Nat', '1475311584', 130),
+(NULL, 'Mothers', 'Nate', '1475311584', 130),
+(NULL, 'Mothers', 'Natale', '1475311584', 130),
+(NULL, 'Mothers', 'Neteyam', '1475311584', 130),
+(NULL, 'Mothers', 'Erin', '1475311584', 130),
+(NULL, 'Mothers', 'Ruby', '1475311584', 130),
+(NULL, 'Mothers', 'Rose', '1475311584', 130),
+(NULL, 'Mothers', 'Lily', '1475311584', 130),
+(NULL, 'Mothers', 'Life', '1475311584', 130),
+(NULL, 'Mothy', 'Life', '1475311584', 140),
+(NULL, 'Mothy', 'Lily', '1475311584', 140),
+(NULL, 'Mothy', 'Devin', '1475311584', 140),
+(NULL, 'Mothy', 'Ben', '1475311584', 140),
+(NULL, 'Mothy', 'Trevor', '1475311584', 140),
+(NULL, 'Mothy', 'Irvin', '1475311584', 140),
+(NULL, 'Mothy', 'River', '1475311584', 140),
+(NULL, 'Mothy', 'Abel', '1475311584', 140),
+(NULL, 'Mothy', 'Dylan', '1475311584', 140),
+(NULL, 'Mothy', 'Cael', '1475311584', 140),
+(NULL, 'Lambert', 'Lin', '1475311584', 150),
+(NULL, 'Lambert', 'Tyrell', '1475311584', 150),
+(NULL, 'Lambert', 'Anne', '1475311584', 150),
+(NULL, 'Lambert', 'Amme', '1475311584', 150),
+(NULL, 'Lambert', 'Anna', '1475311584', 150),
+(NULL, 'Lambert', 'Anastasia', '1475311584', 150),
+(NULL, 'Lambert', 'Asia', '1475311584', 150),
+(NULL, 'Lambert', 'Deen', '1475311584', 150),
+(NULL, 'Lambert', 'Dee', '1475311584', 150),
+(NULL, 'Lambert', 'Davon', '1475311584', 150),
+(NULL, 'Lamb', 'Dave', '1475311584', 160),
+(NULL, 'Lamb', 'Dan', '1475311584', 160),
+(NULL, 'Lamb', 'Danny', '1475311584', 160),
+(NULL, 'Lamb', 'Okoye', '1475311584', 160),
+(NULL, 'Lamb', 'Shuri', '1475311584', 160),
+(NULL, 'Lamb', 'Leeloo', '1475311584', 160),
+(NULL, 'Lamb', 'Kim', '1475311584', 160),
+(NULL, 'Lamb', 'Tim', '1475311584', 160),
+(NULL, 'Lamb', 'Sally', '1475311584', 160),
+(NULL, 'Lamb', 'Jiro', '1475311584', 160),
+(NULL, 'Kurry', 'Jiro', '1475311584', 170),
+(NULL, 'Kurry', 'Kimi', '1475311584', 170),
+(NULL, 'Kurry', 'Neo', '1475311584', 170),
+(NULL, 'Kurry', 'Trinity', '1475311584', 170),
+(NULL, 'Kurry', 'James', '1475311584', 170),
+(NULL, 'Kurry', 'Jimmy', '1475311584', 170),
+(NULL, 'Kurry', 'Kiri', '1475311584', 170),
+(NULL, 'Kurry', 'Zero', '1475311584', 170),
+(NULL, 'Kurry', 'Nausica', '1475311584', 170),
+(NULL, 'Kurry', 'Maria', '1475311584', 170),
+(NULL, 'Shin', 'Maria', '1475311584', 180),
+(NULL, 'Shin', 'Marra', '1475311584', 180),
+(NULL, 'Shin', 'Marry', '1475311584', 180),
+(NULL, 'Shin', 'Mario', '1475311584', 180),
+(NULL, 'Shin', 'Tim', '1475311584', 180),
+(NULL, 'Shin', 'Mia', '1475311584', 180),
+(NULL, 'Shin', 'Moira', '1475311584', 180),
+(NULL, 'Shin', 'Tatiana', '1475311584', 180),
+(NULL, 'Shin', 'Kataleya', '1475311584', 180),
+(NULL, 'Shin', 'Shuri', '1475311584', 180),
+(NULL, 'Sheon', 'Erin', '1475311584', 190),
+(NULL, 'Sheon', 'Shi', '1475311584', 190),
+(NULL, 'Sheon', 'Suki', '1475311584', 190),
+(NULL, 'Sheon', 'Soki', '1475311584', 190),
+(NULL, 'Sheon', 'Soka', '1475311584', 190),
+(NULL, 'Sheon', 'Okoye', '1475311584', 190),
+(NULL, 'Sheon', 'Delle', '1475311584', 190),
+(NULL, 'Sheon', 'Kiri', '1475311584', 190),
+(NULL, 'Sheon', 'Maria', '1475311584', 190),
+(NULL, 'Sheon', 'Vicky', '1475311584', 190),
+(NULL, 'Barthan', 'Vicky', '1475311584', 200),
+(NULL, 'Barthan', 'Victoria', '1475311584', 200),
+(NULL, 'Barthan', 'Valeria', '1475311584', 200),
+(NULL, 'Barthan', 'Van', '1475311584', 200),
+(NULL, 'Barthan', 'Zoe', '1475311584', 200),
+(NULL, 'Barthan', 'Kiki', '1475311584', 200),
+(NULL, 'Barthan', 'Titika', '1475311584', 200),
+(NULL, 'Barthan', 'Kathy', '1475311584', 200),
+(NULL, 'Barthan', 'Tammy', '1475311584', 200),
+(NULL, 'Barthan', 'Kikki', '1475311584', 200),
+(NULL, 'Sally', 'Kiri', '1111111111', 50),
+(NULL, 'Sally', 'Neteyam', '1111111111', 50),
+(NULL, 'Sally', 'Naitiri', '1111111111', 50),
+(NULL, 'Sally', 'Touk', '1111111111', 50),
+(NULL, 'Sally', 'Loak', '1111111111', 50),
+(NULL, 'Sally', 'Shara', '1111111111', 50),
+(NULL, 'Sally', 'Sara', '1111111111', 50),
+(NULL, 'Sally', 'Teagan', '1111111111', 50),
+(NULL, 'Sally', 'Rin', '1111111111', 50),
+(NULL, 'Sally', 'Spy', '1111111111', 50),
+(NULL, 'Oconnels', 'James', '1111111111', 60),
+(NULL, 'Oconnels', 'Kiki', '1111111111', 60),
+(NULL, 'Oconnels', 'Jammy', '1111111111', 60),
+(NULL, 'Oconnels', 'Jimmy', '1111111111', 60),
+(NULL, 'Oconnels', 'Genesis', '1111111111', 60),
+(NULL, 'Oconnels', 'Victoria', '1111111111', 60),
+(NULL, 'Oconnels', 'Vicky', '1111111111', 60),
+(NULL, 'Oconnels', 'Vi', '1111111111', 60),
+(NULL, 'Oconnels', 'Abby', '1111111111', 60),
+(NULL, 'Oconnels', 'Aden', '1111111111', 60),
+(NULL, 'Sally', 'Kiri', '2111111112', 50),
+(NULL, 'Sally', 'Neteyam', '2111111112', 50),
+(NULL, 'Sally', 'Naitiri', '2111111112', 50),
+(NULL, 'Sally', 'Touk', '2111111112', 50),
+(NULL, 'Sally', 'Loak', '2111111112', 50),
+(NULL, 'Sally', 'Shara', '2111111112', 50),
+(NULL, 'Sally', 'Sara', '2111111112', 50),
+(NULL, 'Sally', 'Teagan', '2111111112', 50),
+(NULL, 'Sally', 'Rin', '2111111112', 50),
+(NULL, 'Sally', 'Spy', '2111111112', 50),
+(NULL, 'Oconnels', 'James', '2111111112', 60),
+(NULL, 'Oconnels', 'Kiki', '2111111112', 60),
+(NULL, 'Oconnels', 'Jammy', '2111111112', 60),
+(NULL, 'Oconnels', 'Jimmy', '2111111112', 60),
+(NULL, 'Oconnels', 'Genesis', '2111111112', 60),
+(NULL, 'Oconnels', 'Victoria', '2111111112', 60);
+
+DROP PROCEDURE IF EXISTS newdriver;
+DELIMITER $
+CREATE PROCEDURE newdriver(drvAT CHAR(10),wrkName VARCHAR(20),wrkLname VARCHAR(20),
+				wrkSalary FLOAT(7.2),
+				drvLicense ENUM('A','B','C','D'),
+				drvRoute ENUM('LOCAL','ABROAD'),drvExp TINYINT(4))
+BEGIN
+	DECLARE oldwrkcount INT;
+	DECLARE newwrkcount INT(10);
+	DECLARE minbrcd CHAR(10);
+	DECLARE brcd CHAR(10);
+	DECLARE not_found INT;
+	DECLARE bcursor CURSOR FOR
+	SELECT wrk_br_code FROM worker
+	WHERE wrk_AT=drv_AT;
+	DECLARE CONTINUE HANDLER FOR NOT FOUND
+	SET not_found=1;
+
+	SET not_found=0;
+	SET oldwrkcount=NULL;
+	OPEN bcursor;
+	REPEAT
+		FETCH bcursor INTO brcd;
+		IF(not_found=0)
+		THEN
+			SELECT count(drv_AT) INTO newwrkcount FROM driver
+			INNER JOIN worker ON drv_AT=wrk_AT
+			WHERE wrk_br_code=brcd
+			ORDER BY wrk_br_code;
+		IF(newwrkcount<oldwrkcount)
+		THEN 
+		SELECT wrk_br_code INTO minbrcd FROM worker WHERE wrk_br_code=brcd;
+		END IF;
+		END IF;
+	UNTIL(not_found=1)
+	END REPEAT;
+
+	SET @drvAT=drvAT;
+	SET @drvLicense=drvLicense;
+	SET @drvRoute=drvRoute;
+	SET @drvExp=drvExp;
+	SET @wrkName=wrkName;
+	SET @wrkAT=drvAT;
+	SET @wrkLname=wrkLname;
+	SET @wrkSalary=wrkSalary;
+	SET @wrk_br_code=minbrcd;
+
+INSERT INTO worker VALUES (@wrkAT,@wrkName,@wrkLname,@wrkSalary,@wrk_br_code);
+INSERT INTO driver VALUES (@drvAT,@drvLicense,@drvRoute,@drvExp);
+ END$
+DELIMITER ;
+
+CALL newdriver(1010101110,'Jackob','James',25000.00,'B','LOCAL',5);
+
+DROP PROCEDURE IF EXISTS hellofatrip;
+DELIMITER $
+CREATE PROCEDURE hellofatrip(BR_code INT,startdate DATE,enddate DATE)
+BEGIN
+	DECLARE brcd INT;
+	DECLARE not_found INT;
+	DECLARE bcursor CURSOR FOR
+	SELECT brcd FROM trip
+	WHERE tr_br_code=BR_code;
+	DECLARE CONTINUE HANDLER FOR NOT FOUND
+	SET not_found=1;
+
+	SET not_found=0;
+	OPEN bcursor;
+	REPEAT
+		FETCH bcursor INTO brcd;
+		IF(not_found=0)
+		THEN
+			SELECT tr_cost,tr_maxseats,wrk_name,wrk_lname,tr_departure,tr_return FROM trip
+			INNER JOIN driver ON wrk_AT=drv_AT
+			INNER JOIN guide ON wrk_AT=gui_AT
+			WHERE tr_br_code=brcd AND tr_departure>=startdate AND tr_return<=enddate;	
+END IF;
+	UNTIL(not_found=1)
+	END REPEAT;
+	CLOSE bcursor;
+END$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS delete_admin;
+DELIMITER $
+CREATE PROCEDURE delete_admin(IN name VARCHAR(20), IN lname VARCHAR(20))
+BEGIN
+DECLARE worker_AT CHAR(10);
+DECLARE admin_AT CHAR(10);
+DECLARE admin_type ENUM('LOGISTICS', 'ADMINISTRATIVE', 'ACCOUNTING');
+DECLARE admin_type_check VARCHAR(20);
+SET admin_type_check='ADMINISTRATIVE';
+SELECT wrk_AT INTO worker_AT FROM worker WHERE wrk_name=name AND wrk_lname=lname LIMIT 0,1; 		/* Θέτει στην worker_AT τον ΑΤ του worker με όνομα και επώνυμο τα εισαγώμενα */
+SELECT admin.adm_AT INTO admin_AT FROM admin INNER JOIN worker ON adm_AT=worker_AT LIMIT 0,1; 		/* Θέτει στην admin_AT τον AT του admin που worker_AT=admin_AT, δηλαδή ελέγχει οτι είναι admin */
+SELECT admin.adm_type INTO admin_type FROM admin INNER JOIN worker ON adm_AT=worker_AT LIMIT 0,1; 	/* Θέτει στην admin_type τον τύπο admin που είναι ο συγκεκριμένος εργαζόμενος */
+IF(worker_AT is NULL) THEN													/* Ελέγχει αν υπάρχει ο εργαζόμενος */
+SELECT 'Worker not found.';
+ELSEIF(admin_type is NULL) THEN 												/* Ελέγχει αν είναι διοικητικός υπάλληλος ο εγαζόμενος */
+SELECT 'Worker not admin.';
+ELSEIF(admin_type=admin_type_check) THEN 											/* Ελέγχει αν είναι τύπου ADMINISTRATIVE ο διοικητικός υπάλληλος */
+SELECT 'Worker is an administrator and can not be deleted.';
+ELSE																	/* Εκτελεί την διαγραφή του εργαζομένου από τον πίνακα */
+SELECT 'Worker found.';
+DELETE FROM worker WHERE wrk_AT=worker_AT;
+END IF;
+END$
+DELIMITER ;
+
+CALL delete_admin('Shuri', 'Trish');											/* IS NOT A WORKER */
+CALL delete_admin('Ava', 'Andrade');											/* IS NOT ADMIN */
+CALL delete_admin('Eleanor', 'Meyer'); 											/* IS ADMINISTRATIVE */ 
+CALL delete_admin('Naya', 'Amar');												/* IS ADMIN AND NOT AN ADMINISTRATIVE */
+
+CREATE INDEX adv_payment ON reservation_offers(adv_payment);
+EXPLAIN SELECT reserv_lname, reserv_name FROM reservation_offers WHERE adv_payment>60 AND adv_payment<100;
+SELECT reserv_lname, reserv_name FROM reservation_offers WHERE adv_payment>60 AND adv_payment<100;
+
+
+DROP PROCEDURE IF EXISTS reservation_offers_cost;
+DELIMITER $
+CREATE PROCEDURE reservation_offers_cost(IN price_s INT, IN price_e INT, OUT lname VARCHAR(20), OUT name VARCHAR(20))
+BEGIN
+DECLARE not_found INT; 
+DECLARE curs CURSOR FOR 
+SELECT reserv_lname, reserv_name FROM reservation_offers WHERE adv_payment>price_s AND adv_payment<price_e; /* Παίρνει από τον πίνακα reservation_offers το όνομα και επώνυμο που είναι ανάμεσα στις τιμές */
+DECLARE CONTINUE HANDLER FOR NOT FOUND 
+SET not_found=1;
+
+SET not_found=0;
+OPEN curs;
+REPEAT
+IF(price_s>=50 AND price_e<=200) THEN /* Αν η τιμές που δίνουμε βρίσκονται στα όρια των τιμών του πίνακα */
+FETCH curs INTO lname, name; /* Φέρνει το όνομα και επώνυμο */
+IF(not_found=0) THEN
+SELECT lname, name FROM reservation_offers WHERE adv_payment>price_s AND adv_payment<price_e LIMIT 0,1;
+END IF;
+ELSE
+SELECT 'The prices you have given are not in the travel agency price range.';
+END IF;
+UNTIL(not_found=1)
+END REPEAT;
+CLOSE curs;
+END$
+DELIMITER ;
+
+CALL reservation_offers_cost( 50, 100, @lnam, @nam);
+
+CREATE INDEX reserv_lname ON reservation_offers(reserv_lname);
+EXPLAIN SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname LIKE 'Oconnels';
+SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname LIKE 'Oconnels';
+
+DROP PROCEDURE IF EXISTS clients_reservation_offers;
+DELIMITER $
+CREATE PROCEDURE clients_reservation_offers(INOUT lname VARCHAR(20), OUT name VARCHAR(20), OUT offers_registration_id INT)
+BEGIN
+DECLARE id INT;
+DECLARE lname_count INT;
+SET lname_count=1;
+SELECT COUNT(lname) INTO lname_count FROM reservation_offers WHERE reserv_lname=lname;
+IF(lname_count=1) THEN
+SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname=lname;
+ELSE 
+SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname=lname;
+SELECT count(lname) AS last_names_count FROM reservation_offers WHERE reserv_lname=lname;
+END IF;
+END$
+DELIMITER ;
+
+SET @Last_name='Oconnels';
+CALL clients_reservation_offers(@Last_name, @nam, @x);
+
+DROP TABLE log;
+CREATE TABLE log(
+Operation VARCHAR(20),
+UpdatedOn DATETIME,
+UpdatedBy VARCHAR(20));
+
+DROP TRIGGER IF EXISTS loginsert;
+DELIMITER $
+CREATE TRIGGER loginsert
+AFTER INSERT ON trip
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS resloginsert;
+DELIMITER $
+CREATE TRIGGER resloginsert
+AFTER INSERT ON reservation
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS eventloginsert;
+DELIMITER $
+CREATE TRIGGER eventloginsert
+AFTER INSERT ON event
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS travloginsert;
+DELIMITER $
+CREATE TRIGGER travloginsert
+AFTER INSERT ON travel_to
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('INSERT',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS logdelete;
+DELIMITER $
+CREATE TRIGGER logdelete
+AFTER DELETE ON trip
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS reslogdelete;
+DELIMITER $
+CREATE TRIGGER reslogdelete
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS eventlogdelete;
+DELIMITER $
+CREATE TRIGGER eventlogdelete
+AFTER DELETE ON event
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS travlogdelete;
+DELIMITER $
+CREATE TRIGGER travlogdelete
+AFTER DELETE ON travel_to
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('DELETE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS logupdate;
+DELIMITER $
+CREATE TRIGGER logupdate
+AFTER DELETE ON trip
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS reslogupdate;
+DELIMITER $
+CREATE TRIGGER reslogupdate
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS eventlogupdate;
+DELIMITER $
+CREATE TRIGGER eventlogupdate
+AFTER DELETE ON event
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS travlogupdate;
+DELIMITER $
+CREATE TRIGGER travlogupdate
+AFTER DELETE ON travel_to
+FOR EACH ROW
+BEGIN
+INSERT INTO log(Operation,UpdatedOn,UpdatedBy)
+VALUES ('UPDATE',CURDATE(),SUSER_NAME());
+END$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS trip_update_check;
+DELIMITER $
+CREATE TRIGGER trip_update_check BEFORE UPDATE ON trip
+FOR EACH ROW
+BEGIN
+DECLARE reservation_id INT;
+DECLARE trip_id INT;
+DECLARE max INT;
+DECLARE count INT;
+SET count=0;
+SELECT MAX(tr_id) INTO max FROM trip ORDER BY tr_id;
+REPEAT
+SELECT tr_id INTO trip_id FROM trip LIMIT count,1;
+SELECT reservation.res_tr_id INTO reservation_id FROM reservation INNER JOIN trip ON trip.tr_id=reservation.res_tr_id WHERE tr_id=trip_id LIMIT 0,1;
+IF(trip_id=reservation_id) THEN
+SET NEW.tr_departure=OLD.tr_departure;
+SET NEW.tr_return=OLD.tr_return;
+SET NEW.tr_cost=OLD.tr_cost;
+END IF;
+SET count=count+1;
+UNTIL(count>=max)
+END REPEAT;
+END$
+DELIMITER ;
+
+Drop trigger if exists salaryins
+DELIMITER $
+CREATE TRIGGER salaryins
+BEFORE UPDATE ON worker
+FOR EACH ROW
+BEGIN
+IF NEW.wrk_salary<OLD.wrk_salary THEN SET NEW.wrk_salary=OLD.wrk_salary;
+END IF;
+END$

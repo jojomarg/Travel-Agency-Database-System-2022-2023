@@ -1,0 +1,172 @@
+/* Project 2022-2023 */
+
+DROP DATABASE IF EXISTS travel_agency;						/* Ελέγχω αν υπάρχει το database μου */
+CREATE DATABASE travel_agency;							/* Δημιουργώ το database μου */
+USE travel_agency;									/* Θέτω το database μου ως travel_agency */
+
+CREATE TABLE branch(
+br_code INT(11) NOT NULL AUTO_INCREMENT,						/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή και να δίνεται αυτόματα με αυξηση της τιμής καθε φορά */
+br_street VARCHAR(30) DEFAULT 'unknown' NOT NULL,		    		/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+br_num INT(4),
+br_city VARCHAR(30) DEFAULT 'unknown' NOT NULL,			    		/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+PRIMARY KEY(br_code)
+);
+
+CREATE TABLE phones(
+ ph_br_code INT(11) NOT NULL AUTO_INCREMENT,					/* κλειδί της branch οντότητας */
+ ph_number CHAR(10) NOT NULL,
+ PRIMARY KEY(ph_br_code, ph_number),
+ FOREIGN KEY(ph_br_code) REFERENCES branch(br_code)				/* συνδέονται με το κλειδί br_code */
+ ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE worker(
+wrk_AT CHAR(10) NOT NULL,
+wrk_name VARCHAR(20) DEFAULT 'unknown',						/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+wrk_lname VARCHAR(20) DEFAULT 'unknown',						/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+wrk_salary FLOAT(7,2) NOT NULL,
+wrk_br_code INT(11) NOT NULL,								/* κλειδί branch οντότητας */
+PRIMARY KEY(wrk_AT),
+FOREIGN KEY(wrk_br_code) REFERENCES branch(br_code)				/* αφού το βελάκι φεύγει από την οντότητα worker, συγκεκριμένα το γνώρισμα wrk_br_code και πηγαίνει στην οντότητα branch συγκεκριένα στο γνώρισμα και κλειδί br_code */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE guide(
+gui_AT CHAR(10) NOT NULL,
+gui_cv TEXT,
+PRIMARY KEY(gui_AT),
+FOREIGN KEY(gui_AT) REFERENCES worker(wrk_AT)					/* αφού το βελάκι φεύγει από την οντότητα guide, συγκεκριμένα το γνώρισμα gui_AT και πηγαίνει στην οντότητα worker συγκεκριένα στο γνώρισμα και κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE languages(
+lng_gui_AT CHAR(10) NOT NULL,								/* κλειδί guide οντότητας */
+lng_language VARCHAR(30) DEFAULT 'unknown' NOT NULL,    			/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+PRIMARY KEY(lng_gui_AT, lng_language),
+FOREIGN KEY(lng_gui_AT) REFERENCES guide(gui_AT)				/* συνδέονται με το κλειδί gui_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE driver(
+drv_AT CHAR(10) NOT NULL,
+drv_license ENUM('A', 'B', 'C', 'D') NOT NULL,
+drv_route ENUM('LOCAL', 'ABROAD') NOT NULL,
+drv_experience TINYINT(4), 
+PRIMARY KEY(drv_AT),
+FOREIGN KEY(drv_AT) REFERENCES worker(wrk_AT)					/* αφού το βελάκι φεύγει από την οντότητα driver, συγκεκριμένα το γνώρισμα drv_AT και πηγαίνει στην οντότητα worker συγκεκριένα στο γνώρισμα και κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE admin(
+adm_AT CHAR(10) NOT NULL,
+adm_type ENUM('LOGISTICS', 'ADMINISTRATIVE', 'ACCOUNTING') NOT NULL,	/* μπορεί να πάρει τιμές μεταξύ LOGISTICS, ADMINISTRATIVE και ACCOUNTING */
+adm_diploma VARCHAR(200) DEFAULT 'unknown' NOT NULL,				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+PRIMARY KEY(adm_AT),
+FOREIGN KEY(adm_AT) REFERENCES worker(wrk_AT)					/* αφού το βελάκι φεύγει από την οντότητα admin, συγκεκριμένα το γνώρισμα adm_AT και πηγαίνει στην οντότητα worker συγκεκριένα στο γνώρισμα και κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE manages(
+mng_adm_AT CHAR(10) NOT NULL,								/* κλειδί admin οντότητας */
+mng_br_code INT(11) NOT NULL,								/* κλειδί branch οντότητας */
+PRIMARY KEY(mng_adm_AT, mng_br_code),
+FOREIGN KEY(mng_adm_AT) REFERENCES admin(adm_AT)				/* συνδέονται με το κλειδί adm_AT */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(mng_br_code) REFERENCES branch(br_code)				/* συνδέονται με το κλειδί br_code */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE trip(
+tr_id INT(11) NOT NULL AUTO_INCREMENT,						/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή και να δίνεται αυτόματα με αυξηση της τιμής καθε φορά */
+tr_departure DATETIME,
+tr_return DATETIME,
+tr_maxseats TINYINT(4) NOT NULL,
+tr_cost FLOAT(7,2) NOT NULL,
+tr_br_code INT(11) NOT NULL,								/* κλειδί της branch οντότητας */
+tr_gui_AT CHAR(10) NOT NULL,								/* κλειδί guide οντότητας */
+tr_drv_AT CHAR(10) NOT NULL,								/* κλειδί driver οντότητας */
+PRIMARY KEY(tr_id),
+FOREIGN KEY(tr_br_code) REFERENCES branch(br_code)				/* αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_br_code και πηγαίνει στην οντότητα branch συγκεκριένα στο γνώρισμα και κλειδί br_code */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(tr_gui_AT) REFERENCES guide(gui_AT)					/* αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_gui_AT και πηγαίνει στην οντότητα guide συγκεκριένα στο γνώρισμα και κλειδί gui_AT */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(tr_drv_AT) REFERENCES driver(drv_AT)				/* αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_drv_AT και πηγαίνει στην οντότητα driver συγκεκριένα στο γνώρισμα και κλειδί tr_drv_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE event(
+ ev_tr_id INT(11) NOT NULL,								/* κλειδί trip οντότητας */
+ ev_start DATETIME, 
+ ev_end DATETIME,
+ ev_descr TEXT(6000),
+ PRIMARY KEY(ev_tr_id, ev_start),
+ FOREIGN KEY(ev_tr_id) REFERENCES trip(tr_id)					/* συνδέονται με το κλειδί tr_id */
+ ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE destination(
+dst_id INT(11) NOT NULL AUTO_INCREMENT,						/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή και να δίνεται αυτόματα με αυξηση της τιμής καθε φορά */
+dst_name VARCHAR(50) DEFAULT 'unknown' NOT NULL,		  		/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+dst_descr TEXT(6000) NOT NULL,
+dst_rtype ENUM('LOCAL', 'ABROAD') NOT NULL,					/* μπορεί να πάρει τιμές μεταξύ ADULT και MINOR */
+dst_language VARCHAR(30) DEFAULT 'unknown' NOT NULL,				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+dst_location INT(11),									/* είναι εξωτερικό κλειδί της ίδιας οντότητας */
+PRIMARY KEY(dst_id),
+FOREIGN KEY(dst_location) REFERENCES destination(dst_id)			/* συνδέονται με το κλειδί dst_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE reservation(
+res_tr_id INT(11) NOT NULL,								/* κλειδί trip οντότητας */
+res_seatnum TINYINT(4) NOT NULL,							/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή */
+res_name VARCHAR(20) DEFAULT 'unknown' NOT NULL, 				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+res_lname VARCHAR(20) DEFAULT 'unknown' NOT NULL, 				/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+res_isadult ENUM('ADULT', 'MINOR') NOT NULL,					/* μπορεί να πάρει τιμές μεταξύ ADULT και MINOR */
+PRIMARY KEY(res_tr_id, res_seatnum),
+FOREIGN KEY(res_tr_id) REFERENCES trip(tr_id)					/* συνδέονται με το κλειδί tr_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE travel_to(
+to_tr_id INT(11) NOT NULL,								/* κλειδί trip οντότητας */
+to_dst_id  INT(11) NOT NULL,								/* κλειδί destination οντότητας */
+tp_arrival DATETIME,
+to_departure DATETIME,
+PRIMARY KEY(to_tr_id, to_dst_id),
+FOREIGN KEY(to_tr_id) REFERENCES trip(tr_id)					/* συνδέονται με το κλειδί tr_id */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(to_dst_id) REFERENCES destination(dst_id)				/* συνδέονται με το κλειδί dst_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE it(
+it_AT CHAR(10) NOT NULL,								/* κλειδί worker οντότητας */
+it_pwd CHAR(10) NOT NULL DEFAULT 'password',
+it_start_date DATE NOT NULL,
+it_end_date DATE,
+PRIMARY KEY (it_AT),
+FOREIGN KEY (it_AT) REFERENCES worker(wrk_AT)					/* συνδέονται με το κλειδί wrk_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE offers(
+offers_id INT(11) NOT NULL,
+start_date DATE NOT NULL,
+end_date DATE NOT NULL,
+cost_per_pers FLOAT(7,2) NOT NULL,
+offers_dst_id INT(11) NOT NULL,							/* κλειδί destination οντότητας */
+PRIMARY KEY(offers_id),
+FOREIGN KEY(offers_dst_id) REFERENCES destination(dst_id)			/* συνδέονται με το κλειδί dst_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE reservation_offers(
+reserv_id INT(11) NOT NULL AUTO_INCREMENT,
+reserv_lname VARCHAR(20) DEFAULT 'unknown' NOT NULL,
+reserv_name VARCHAR(20) DEFAULT 'unknown' NOT NULL,
+reserv_offers_id INT(11) NOT NULL,							/* κλειδί offers οντότητας */
+adv_payment INT(11) NOT NULL,
+PRIMARY KEY(reserv_id),
+FOREIGN KEY(reserv_offers_id) REFERENCES offers(offers_id)			/* συνδέονται με το κλειδί offers_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);

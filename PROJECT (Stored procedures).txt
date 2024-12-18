@@ -1,0 +1,122 @@
+ Stored procedure η οποία παίρνει ως όρισμα το όνομα και το επώνυμο ενός
+υπαλλήλου. Αν είναι διοικητικός τον διαγράφει. Αν ο υπάλληλος είναι διευθυντής
+υποκαταστήματος τότε εμφανίζεται μήνυμα ότι είναι διευθυντής του υποκαταστήματος
+και δεν επιτρέπει τη διαγραφή. 
+
+Μας ζητείται, δίνοντας το όνομα(wrk_name) και το επώνυμο(wrk_lname) ενός υπαλλήλου να ελένξουμε 
+αν είναι διοικητικός υπάλληλος(admin). Αν ναι, να τον διαγράψουμε από την λίστα
+
+ 
+DROP PROCEDURE IF EXISTS delete_admin;
+DELIMITER $
+CREATE PROCEDURE delete_admin(IN name VARCHAR(20), IN lname VARCHAR(20))
+BEGIN
+DECLARE worker_AT CHAR(10);
+DECLARE admin_AT CHAR(10);
+DECLARE admin_type ENUM('LOGISTICS', 'ADMINISTRATIVE', 'ACCOUNTING');
+DECLARE admin_type_check VARCHAR(20);
+SET admin_type_check='ADMINISTRATIVE';
+SELECT wrk_AT INTO worker_AT FROM worker WHERE wrk_name=name AND wrk_lname=lname LIMIT 0,1; 		/* Θέτει στην worker_AT τον ΑΤ του worker με όνομα και επώνυμο τα εισαγώμενα */
+SELECT admin.adm_AT INTO admin_AT FROM admin INNER JOIN worker ON adm_AT=worker_AT LIMIT 0,1; 		/* Θέτει στην admin_AT τον AT του admin που worker_AT=admin_AT, δηλαδή ελέγχει οτι είναι admin */
+SELECT admin.adm_type INTO admin_type FROM admin INNER JOIN worker ON adm_AT=worker_AT LIMIT 0,1; 	/* Θέτει στην admin_type τον τύπο admin που είναι ο συγκεκριμένος εργαζόμενος */
+IF(worker_AT is NULL) THEN													/* Ελέγχει αν υπάρχει ο εργαζόμενος */
+SELECT 'Worker not found.';
+ELSEIF(admin_type is NULL) THEN 												/* Ελέγχει αν είναι διοικητικός υπάλληλος ο εγαζόμενος */
+SELECT 'Worker not admin.';
+ELSEIF(admin_type=admin_type_check) THEN 											/* Ελέγχει αν είναι τύπου ADMINISTRATIVE ο διοικητικός υπάλληλος */
+SELECT 'Worker is an administrator and can not be deleted.';
+ELSE																	/* Εκτελεί την διαγραφή του εργαζομένου από τον πίνακα */
+SELECT 'Worker found.';
+DELETE FROM worker WHERE wrk_AT=worker_AT;
+END IF;
+END$
+DELIMITER ;
+
+CALL delete_admin('Shuri', 'Trish');											/* IS NOT A WORKER */
+CALL delete_admin('Ava', 'Andrade');											/* IS NOT ADMIN */
+CALL delete_admin('Eleanor', 'Meyer'); 											/* IS ADMINISTRATIVE */ 
+CALL delete_admin('Naya', 'Amar');												/* IS ADMIN AND NOT AN ADMINISTRATIVE */
+
+---------------------------------------------
+Σε συνέχεια της απαίτησης 3.1.2.3, λόγω του μεγάλου πλήθους εγγραφών ,θα
+πρέπει να δημιουργήσετε επιπλέον ευρετήριο στον πίνακα reservation_offers. Για κάθε
+μια από τις stored procedures θα επιλέξετε το κατάλληλο ευρετήριο και να
+αιτιολογήσετε την επιλογή σας, έτσι ώστε να αντιμετωπίζεται αποδοτικά τα ζητούμενα
+παρακάτω. Θα καταγράψετε τους χρόνους για κάθε εκτέλεση με και χωρίς ευρετήριο,
+θα επισυνάψετε κατάλληλο snapshot σχολιάζοντας το.
+
+α)Stored procedure στην οποία δίνονται ως παράμετροι εισόδου δύο τιμές (πχ 50,
+200) και επιστρέφει τους πελάτες (επώνυμο, όνομα) που έκαναν κρατήσεις σε
+προσφορές ταξιδιών και πλήρωσαν για προκαταβολή, ποσό ανάμεσα στις δύο τιμές.
+
+--------------------------------------------------------
+CREATE INDEX adv_payment ON reservation_offers(adv_payment);
+EXPLAIN SELECT reserv_lname, reserv_name FROM reservation_offers WHERE adv_payment>60 AND adv_payment<100;
+SELECT reserv_lname, reserv_name FROM reservation_offers WHERE adv_payment>60 AND adv_payment<100;
+
+------------------------------------------------------------
+
+DROP PROCEDURE IF EXISTS reservation_offers_cost;
+DELIMITER $
+CREATE PROCEDURE reservation_offers_cost(IN price_s INT, IN price_e INT, OUT lname VARCHAR(20), OUT name VARCHAR(20))
+BEGIN
+DECLARE not_found INT; 
+DECLARE curs CURSOR FOR 
+SELECT reserv_lname, reserv_name FROM reservation_offers WHERE adv_payment>price_s AND adv_payment<price_e; /* Παίρνει από τον πίνακα reservation_offers το όνομα και επώνυμο που είναι ανάμεσα στις τιμές */
+DECLARE CONTINUE HANDLER FOR NOT FOUND 
+SET not_found=1;
+
+SET not_found=0;
+OPEN curs;
+REPEAT
+IF(price_s>=50 AND price_e<=200) THEN /* Αν η τιμές που δίνουμε βρίσκονται στα όρια των τιμών του πίνακα */
+FETCH curs INTO lname, name; /* Φέρνει το όνομα και επώνυμο */
+IF(not_found=0) THEN
+SELECT lname, name FROM reservation_offers WHERE adv_payment>price_s AND adv_payment<price_e LIMIT 0,1;
+END IF;
+ELSE
+SELECT 'The prices you have given are not in the travel agency price range.';
+END IF;
+UNTIL(not_found=1)
+END REPEAT;
+CLOSE curs;
+END$
+DELIMITER ;
+
+CALL reservation_offers_cost( 50, 100, @lnam, @nam);
+
+--------------------------------------------------------------
+β) Stored procedure στην οποία δίνεται ως παράμετρος εισόδου το επώνυμο ενός
+πελάτη και επιστρέφει τα ονόματα και επώνυμα των πελατών με το επώνυμο αυτό
+και η προσφορά ταξιδιού στην οποία έχει γίνει εγγραφή. Σε περίπτωση που υπάρχουν
+πάνω από ένας επιστρέφει το πλήθος των πελατών με το όνομα αυτό, ανά προσφορά
+ταξιδιού.
+----------------------------
+
+CREATE INDEX reserv_lname ON reservation_offers(reserv_lname);
+EXPLAIN SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname LIKE 'Oconnels';
+SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname LIKE 'Oconnels';
+
+--------------------------------------------------
+
+DROP PROCEDURE IF EXISTS clients_reservation_offers;
+DELIMITER $
+CREATE PROCEDURE clients_reservation_offers(INOUT lname VARCHAR(20), OUT name VARCHAR(20), OUT offers_registration_id INT)
+BEGIN
+DECLARE id INT;
+DECLARE lname_count INT;
+SET lname_count=1;
+SELECT COUNT(lname) INTO lname_count FROM reservation_offers WHERE reserv_lname=lname;
+IF(lname_count=1) THEN
+SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname=lname;
+ELSE 
+SELECT reserv_lname, reserv_name, reserv_offers_id FROM reservation_offers WHERE reserv_lname=lname;
+SELECT count(lname) AS last_names_count FROM reservation_offers WHERE reserv_lname=lname;
+END IF;
+END$
+DELIMITER ;
+
+SET @Last_name='Oconnels';
+CALL clients_reservation_offers(@Last_name, @nam, @x);
+
+

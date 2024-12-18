@@ -1,0 +1,96 @@
+DROP PROCEDURE IF EXISTS newdriver;
+DELIMITER $
+CREATE PROCEDURE newdriver(drvAT CHAR(10),wrkName VARCHAR(20),wrkLname VARCHAR(20),
+				wrkSalary FLOAT(7.2),
+				drvLicense ENUM('A','B','C','D'),
+				drvRoute ENUM('LOCAL','ABROAD'),drvExp TINYINT(4))
+BEGIN
+	DECLARE oldwrkcount INT;
+	DECLARE newwrkcount INT(10);
+	DECLARE minbrcd CHAR(10);
+	DECLARE brcd CHAR(10);
+	DECLARE not_found INT;
+	DECLARE bcursor CURSOR FOR
+	SELECT wrk_br_code FROM worker
+	WHERE wrk_AT=drv_AT;
+	DECLARE CONTINUE HANDLER FOR NOT FOUND
+	SET not_found=1;
+
+	SET not_found=0;
+	SET oldwrkcount=NULL;
+	OPEN bcursor;
+	REPEAT
+		FETCH bcursor INTO brcd;
+		IF(not_found=0)
+		THEN
+			SELECT count(drv_AT) INTO newwrkcount FROM driver
+			INNER JOIN worker ON drv_AT=wrk_AT
+			WHERE wrk_br_code=brcd
+			ORDER BY wrk_br_code;
+		IF(newwrkcount<oldwrkcount)
+		THEN 
+		SELECT wrk_br_code INTO minbrcd FROM worker WHERE wrk_br_code=brcd;
+		END IF;
+		END IF;
+	UNTIL(not_found=1)
+	END REPEAT;
+
+	SET @drvAT=drvAT;
+	SET @drvLicense=drvLicense;
+	SET @drvRoute=drvRoute;
+	SET @drvExp=drvExp;
+	SET @wrkName=wrkName;
+	SET @wrkAT=drvAT;
+	SET @wrkLname=wrkLname;
+	SET @wrkSalary=wrkSalary;
+	SET @wrk_br_code=minbrcd;
+
+INSERT INTO worker VALUES (@wrkAT,@wrkName,@wrkLname,@wrkSalary,@wrk_br_code);
+INSERT INTO driver VALUES (@drvAT,@drvLicense,@drvRoute,@drvExp);
+ END$
+DELIMITER ;
+
+CALL newdriver(1010101110,'Jackob','James',25000.00,'B','LOCAL',5);
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.
+DROP PROCEDURE IF EXISTS hellofatrip;
+DELIMITER $
+CREATE PROCEDURE hellofatrip(BR_code INT,startdate DATE,enddate DATE)
+BEGIN
+	DECLARE brcd INT;
+	DECLARE not_found INT;
+	DECLARE bcursor CURSOR FOR
+	SELECT brcd FROM trip
+	WHERE tr_br_code=BR_code;
+	DECLARE CONTINUE HANDLER FOR NOT FOUND
+	SET not_found=1;
+
+	SET not_found=0;
+	OPEN bcursor;
+	REPEAT
+		FETCH bcursor INTO brcd;
+		IF(not_found=0)
+		THEN
+			SELECT tr_cost,tr_maxseats,wrk_name,wrk_lname,tr_departure,tr_return FROM trip
+			INNER JOIN driver ON wrk_AT=drv_AT
+			INNER JOIN guide ON wrk_AT=gui_AT
+			WHERE tr_br_code=brcd AND tr_departure>=startdate AND tr_return<=enddate;	
+END IF;
+	UNTIL(not_found=1)
+	END REPEAT;
+	CLOSE bcursor;
+END$
+DELIMITER ;
+			 

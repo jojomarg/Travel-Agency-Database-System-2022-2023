@@ -1,0 +1,70 @@
+3.1.4.3. Trigger ο οποίος θα αποτρέπει την αλλαγή της ημερομηνίας αναχώρησης,
+ημερομηνίας επιστροφής και του κόστους του ταξιδιού, αν έχουν ήδη γίνει κρατήσεις
+γι’ αυτό. 
+
+DROP TRIGGER IF EXISTS check_trip;
+DELIMITER $
+CREATE TRIGGER check_trip BEFORE UPDATE ON trip
+FOR EACH ROW
+BEGIN
+DECLARE reservation_id INT;
+SELECT reservation.res_tr_id INTO reservation_id FROM reservation INNER JOIN trip ON reservation.res_tr_id=trip.tr_id LIMIT 0,1;
+IF(tr_id=reservation_id) THEN
+SET NEW.tr_departure=OLD.tr_departure;
+SET NEW.tr_return=OLD.tr_return;
+SET NEW.tr_cost=OLD.tr_cost;
+END IF;
+END$
+DELIMITER ;
+
+INSERT INTO reservation VALUES
+( 1, 1, 'Phil', 'Jacobs', 'ADULT'),
+( 1, 2, 'Robert', 'Stulls', 'ADULT'),
+( 1, 3, 'Barkley', 'Turner', 'MINOR'),
+( 2, 3, 'Olivia', 'Bridges', 'ADULT'),
+( 2, 4, 'Will', 'Dower', 'ADULT'),
+( 3, 1, 'Kate', 'Middletin', 'ADULT'),
+( 3, 2, 'Elijah', 'Wright', 'ADULT'),
+( 4, 1, 'Stuart', 'Little', 'ADULT'),
+( 4, 2, 'Jack', 'Marrowbone', 'MINOR'),
+( 5, 1, 'Mike', 'Stuarts', 'ADULT'),
+( 5, 2, 'Rachel', 'Adams', 'ADULT'),
+( 6, 2, 'Jess', 'Walters', 'ADULT');
+
+UPDATE trip SET tr_cost=3.00 WHERE tr_cost='5000.00';
+
+(NULL, '2024-02-01 06:00:00', '2024-02-29 18:00:00', 6, 05000.00, 1, '1020145368', '2447689992'),		/* ταξίδι στην Κίνα */
+UPDATE trip SET tr_departure='2024-02-01 06:00:00' WHERE tr_return LIKE '2022-02-01%';
+UPDATE trip SET tr_departure='2024-02-29 18:00:00', tr_return='2023-06-01 06:00:00', tr_cost=04500.00 WHERE tr_departure='2023-06-01 06:00:00';
+UPDATE trip SET tr_departure='2024-02-29 18:00:00', tr_return='2023-06-01 06:00:00', tr_cost=04500.00 WHERE tr_return LIKE '%05-30 18:00:00';
+
+CREATE TABLE trip(
+tr_id INT(11) NOT NULL AUTO_INCREMENT,						/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή και να δίνεται αυτόματα με αυξηση της τιμής καθε φορά */
+tr_departure DATETIME,
+tr_return DATETIME,
+tr_maxseats TINYINT(4) NOT NULL,
+tr_cost FLOAT(7,2) NOT NULL,						/* ΔΕΝ ΕΙΜΑΙ ΣΙΓΟΥΡΗ ΑΝ ΓΡΑΦΕΤΑΙ ΕΤΣΙ */
+tr_br_code INT(11) NOT NULL,								/* κλειδί της branch οντότητας */
+tr_gui_AT CHAR(10) NOT NULL,								/* κλειδί guide οντότητας */
+tr_drv_AT CHAR(10) NOT NULL,								/* κλειδί driver οντότητας */
+PRIMARY KEY(tr_id),
+FOREIGN KEY(tr_br_code) REFERENCES branch(br_code)		/* νομιζω πωσ γράφεται ετσι, αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_br_code και πηγαίνει στην οντότητα branch συγκεκριένα στο γνώρισμα και κλειδί br_code */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(tr_gui_AT) REFERENCES guide(gui_AT)		/* νομιζω πωσ γράφεται ετσι, αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_gui_AT και πηγαίνει στην οντότητα guide συγκεκριένα στο γνώρισμα και κλειδί gui_AT */
+ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY(tr_drv_AT) REFERENCES driver(drv_AT)		/* νομιζω πωσ γράφεται ετσι, αφού το βελάκι φεύγει από την οντότητα trip, συγκεκριμένα το γνώρισμα tr_drv_AT και πηγαίνει στην οντότητα driver συγκεκριένα στο γνώρισμα και κλειδί tr_drv_AT */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE reservation(
+res_tr_id INT(11) NOT NULL,									/* κλειδί trip οντότητας */
+res_seatnum TINYINT(4) NOT NULL,				/* είναι κωδικός οπότε θέλουμε πάντα να έχει τιμή */
+res_name VARCHAR(20) DEFAULT 'unknown' NOT NULL, 			/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+res_lname VARCHAR(20) DEFAULT 'unknown' NOT NULL, 			/* αν δεν έχει τιμή by default θα πάρει την τιμή unknown */
+res_isadult ENUM('ADULT', 'MINOR') NOT NULL,							/* μπορεί να πάρει τιμές μεταξύ ADULT και MINOR */
+PRIMARY KEY(res_tr_id, res_seatnum),
+FOREIGN KEY(res_tr_id) REFERENCES trip(tr_id)				/* συνδέονται με το κλειδί tr_id */
+ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
